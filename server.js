@@ -210,6 +210,131 @@ app.get('/api/session/:sessionId', (req, res) => {
   }
 });
 
+// Privacy Policy page (required for Custom GPT Actions)
+app.get('/privacy', (req, res) => {
+  res.send(`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy - Target Team Member Authentication</title>
+  <style>
+    body {
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      color: #333;
+    }
+    h1 {
+      color: #cc0000;
+      border-bottom: 3px solid #cc0000;
+      padding-bottom: 10px;
+    }
+    h2 {
+      color: #cc0000;
+      margin-top: 30px;
+    }
+    .last-updated {
+      color: #666;
+      font-style: italic;
+    }
+    .demo-notice {
+      background: #fff3cd;
+      border-left: 4px solid #cc0000;
+      padding: 15px;
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Privacy Policy</h1>
+  <p class="last-updated">Last Updated: November 21, 2024</p>
+  
+  <div class="demo-notice">
+    <strong>Demo Application Notice:</strong> This is a demonstration application. 
+    All authentication returns the same test user profile (Lauren Bailey) regardless 
+    of credentials provided. No real user data is collected or stored.
+  </div>
+
+  <h2>1. Information We Collect</h2>
+  <p>This application is a demonstration component and does not collect, store, or process real personal information. When you use the authentication feature:</p>
+  <ul>
+    <li>Email addresses and passwords entered are not stored</li>
+    <li>All authentication requests return a demo user profile</li>
+    <li>Session data is stored temporarily in memory and is cleared when the server restarts</li>
+    <li>No persistent storage or databases are used</li>
+  </ul>
+
+  <h2>2. How We Use Information</h2>
+  <p>The demo application uses provided information solely to:</p>
+  <ul>
+    <li>Demonstrate authentication flow in ChatGPT</li>
+    <li>Return a consistent test user profile for development and testing purposes</li>
+    <li>Maintain temporary session state during your interaction</li>
+  </ul>
+
+  <h2>3. Data Storage and Security</h2>
+  <ul>
+    <li><strong>No Persistent Storage:</strong> No user data is written to databases or permanent storage</li>
+    <li><strong>Session Data:</strong> Temporary session identifiers are stored in memory only</li>
+    <li><strong>Automatic Deletion:</strong> All session data is automatically cleared when the server restarts</li>
+    <li><strong>HTTPS:</strong> All communications are encrypted via HTTPS</li>
+  </ul>
+
+  <h2>4. Third-Party Services</h2>
+  <p>This application is hosted on Heroku and integrates with OpenAI's ChatGPT. Please review their privacy policies:</p>
+  <ul>
+    <li><a href="https://www.heroku.com/policy/security" target="_blank">Heroku Security Policy</a></li>
+    <li><a href="https://openai.com/privacy/" target="_blank">OpenAI Privacy Policy</a></li>
+  </ul>
+
+  <h2>5. Cookies and Tracking</h2>
+  <p>This application does not use cookies or tracking technologies. Session management is handled via session IDs passed in API requests.</p>
+
+  <h2>6. Data Sharing</h2>
+  <p>We do not share, sell, or distribute any data. This is a closed demonstration application that:</p>
+  <ul>
+    <li>Does not integrate with external marketing services</li>
+    <li>Does not share data with third parties</li>
+    <li>Does not use analytics or tracking services</li>
+  </ul>
+
+  <h2>7. User Rights</h2>
+  <p>Since no real personal data is collected or stored, there is no data to access, modify, or delete. Each interaction is stateless beyond the temporary session.</p>
+
+  <h2>8. Children's Privacy</h2>
+  <p>This application is designed for demonstration purposes and is not directed at children under 13. No information is collected from users of any age.</p>
+
+  <h2>9. Changes to This Policy</h2>
+  <p>We may update this privacy policy to reflect changes in our practices or for legal reasons. The "Last Updated" date at the top indicates when changes were made.</p>
+
+  <h2>10. Contact Information</h2>
+  <p>For questions about this privacy policy or the demo application, please contact your system administrator.</p>
+
+  <h2>11. Demonstration Application Disclaimer</h2>
+  <p><strong>Important:</strong> This is a demonstration and testing application only. It should not be used for:</p>
+  <ul>
+    <li>Real authentication or authorization</li>
+    <li>Production environments</li>
+    <li>Storing or processing real user credentials</li>
+    <li>Any purpose requiring actual data security</li>
+  </ul>
+  <p>All authentication in this demo returns the same test user profile regardless of input. No real authentication is performed.</p>
+
+  <hr style="margin: 40px 0; border: none; border-top: 1px solid #ccc;">
+  
+  <p style="text-align: center; color: #666; font-size: 14px;">
+    Target Team Member Authentication Demo<br>
+    Demonstration Application Only
+  </p>
+</body>
+</html>
+  `);
+});
+
 // OpenAPI Schema for Custom GPT Actions
 app.get('/openapi.json', (req, res) => {
   const baseUrl = getBaseUrl(req);
@@ -217,8 +342,9 @@ app.get('/openapi.json', (req, res) => {
     "openapi": "3.1.0",
     "info": {
       "title": "Target Team Member Authentication API",
-      "description": "API for Target team member authentication and profile management. This allows ChatGPT to authenticate users and retrieve their profile information.",
-      "version": "1.0.0"
+      "description": "API for Target team member authentication and profile management. This allows ChatGPT to authenticate users and retrieve their profile information. This is a demonstration application that always returns the same test user profile.",
+      "version": "1.0.0",
+      "x-privacy-policy-url": `${baseUrl}/privacy`
     },
     "servers": [
       {
