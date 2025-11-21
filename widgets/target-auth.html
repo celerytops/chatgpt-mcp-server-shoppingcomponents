@@ -299,11 +299,8 @@
 
     <!-- Screen 2: Verification Code -->
     <div id="screen-verify" class="hidden">
-      <p class="subtitle" style="text-align: center; margin-bottom: 8px;">
+      <p class="subtitle" style="text-align: center; margin-bottom: 24px;">
         Enter the 6-digit code sent to your phone
-      </p>
-      <p class="help-text" style="margin-top: 0; margin-bottom: 16px;">
-        Code: <strong>123456</strong> (any code works for demo)
       </p>
       
       <form id="verifyForm">
@@ -332,9 +329,9 @@
         <div class="confirmation-text">
           <p style="margin: 16px 0;">
             Authenticated as<br>
-            <span style="font-size: 18px; font-weight: 600; color: #333;">Lauren Bailey</span>
+            <span id="userName" style="font-size: 18px; font-weight: 600; color: white;">Lauren Bailey</span>
           </p>
-          <p style="font-size: 14px; color: #666;">
+          <p style="font-size: 14px; color: #999;">
             <span class="user-email" id="userEmail"></span>
           </p>
         </div>
@@ -427,7 +424,7 @@
       document.getElementById('screen-success').classList.remove('hidden');
       document.getElementById('userEmail').textContent = userEmail;
       
-      // Save widget state
+      // Save widget state (ChatGPT will see this without triggering tool again)
       if (window.openai?.setWidgetState) {
         await window.openai.setWidgetState({
           authenticated: true,
@@ -435,16 +432,12 @@
           name: 'Lauren Bailey',
           sessionId: sessionId
         });
-        console.log('Widget state saved');
+        console.log('Widget state saved - authentication complete');
       }
       
-      // Notify ChatGPT
-      if (window.openai?.sendFollowUpMessage) {
-        await window.openai.sendFollowUpMessage({
-          prompt: `Successfully authenticated as Lauren Bailey (${userEmail}). Session ID: ${sessionId}`
-        });
-        console.log('Follow-up message sent');
-      }
+      // Note: We do NOT call sendFollowUpMessage here because it would trigger
+      // the tool to be called again, showing the widget a second time.
+      // ChatGPT can see the authentication state through setWidgetState.
     });
     
     console.log('Target Auth Widget ready');
