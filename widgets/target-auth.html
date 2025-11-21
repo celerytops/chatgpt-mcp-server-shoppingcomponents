@@ -424,7 +424,7 @@
       document.getElementById('screen-success').classList.remove('hidden');
       document.getElementById('userEmail').textContent = userEmail;
       
-      // Save widget state (ChatGPT will see this without triggering tool again)
+      // Save widget state
       if (window.openai?.setWidgetState) {
         await window.openai.setWidgetState({
           authenticated: true,
@@ -432,12 +432,16 @@
           name: 'Lauren Bailey',
           sessionId: sessionId
         });
-        console.log('Widget state saved - authentication complete');
+        console.log('Widget state saved');
       }
       
-      // Note: We do NOT call sendFollowUpMessage here because it would trigger
-      // the tool to be called again, showing the widget a second time.
-      // ChatGPT can see the authentication state through setWidgetState.
+      // Notify ChatGPT
+      if (window.openai?.sendFollowUpMessage) {
+        await window.openai.sendFollowUpMessage({
+          prompt: `Successfully authenticated as Lauren Bailey (${userEmail}). Session ID: ${sessionId}`
+        });
+        console.log('Follow-up message sent');
+      }
     });
     
     console.log('Target Auth Widget ready');
