@@ -61,7 +61,6 @@ function widgetDescriptorMeta(w) {
 
 function widgetInvocationMeta(w) {
   return {
-    'openai/outputTemplate': w.templateUri,
     'openai/toolInvocation/invoking': w.invoking,
     'openai/toolInvocation/invoked': w.invoked
   };
@@ -206,10 +205,9 @@ async function handleSseRequest(res) {
 
   sessions.set(sessionId, { server, transport });
 
-  transport.onclose = () => {
-    console.log(`✗ SSE session ${sessionId} closed`);
+  transport.onclose = async () => {
     sessions.delete(sessionId);
-    // Don't call server.close() here - it creates a circular reference!
+    await server.close();
   };
 
   transport.onerror = (error) => {
@@ -226,107 +224,6 @@ async function handleSseRequest(res) {
       res.writeHead(500).end('Failed to establish SSE connection');
     }
   }
-}
-
-// Handle stateless JSON-RPC POST
-async function handleStatelessJsonRpc(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Headers', 'content-type');
-  res.setHeader('Content-Type', 'application/json');
-
-  let body = '';
-  req.on('data', chunk => {
-    body += chunk.toString();
-  });
-
-  req.on('end', async () => {
-    try {
-      const jsonrpcRequest = JSON.parse(body);
-      const server = createPizzazServer();
-      
-      // Handle the request based on method
-      let result;
-      
-      switch (jsonrpcRequest.method) {
-        case 'initialize':
-          result = {
-            protocolVersion: '2024-11-05',
-            capabilities: {
-              resources: {},
-              tools: {}
-            },
-            serverInfo: {
-              name: 'target-auth',
-              version: '1.0.0'
-            }
-          };
-          break;
-          
-        case 'tools/list':
-          const toolsResult = await server._requestHandlers.get('tools/list')({
-            method: 'tools/list',
-            params: jsonrpcRequest.params || {}
-          });
-          result = toolsResult;
-          break;
-          
-        case 'tools/call':
-          const callResult = await server._requestHandlers.get('tools/call')({
-            method: 'tools/call',
-            params: jsonrpcRequest.params || {}
-          });
-          result = callResult;
-          break;
-          
-        case 'resources/list':
-          const resourcesResult = await server._requestHandlers.get('resources/list')({
-            method: 'resources/list',
-            params: jsonrpcRequest.params || {}
-          });
-          result = resourcesResult;
-          break;
-          
-        case 'resources/read':
-          const readResult = await server._requestHandlers.get('resources/read')({
-            method: 'resources/read',
-            params: jsonrpcRequest.params || {}
-          });
-          result = readResult;
-          break;
-          
-        default:
-          res.writeHead(200);
-          res.end(JSON.stringify({
-            jsonrpc: '2.0',
-            id: jsonrpcRequest.id,
-            error: {
-              code: -32601,
-              message: `Method not found: ${jsonrpcRequest.method}`
-            }
-          }));
-          return;
-      }
-      
-      res.writeHead(200);
-      res.end(JSON.stringify({
-        jsonrpc: '2.0',
-        id: jsonrpcRequest.id,
-        result: result
-      }));
-      
-    } catch (error) {
-      console.error('Stateless JSON-RPC error:', error);
-      res.writeHead(200);
-      res.end(JSON.stringify({
-        jsonrpc: '2.0',
-        id: null,
-        error: {
-          code: -32603,
-          message: error.message
-        }
-      }));
-    }
-  });
 }
 
 // Handle POST message
@@ -371,13 +268,10 @@ const httpServer = createServer(
     const url = new URL(req.url, `http://${req.headers.host ?? 'localhost'}`);
 
     // CORS preflight
-    if (
-      req.method === 'OPTIONS' &&
-      (url.pathname === ssePath || url.pathname === postPath)
-    ) {
+    if (req.method === 'OPTIONS' && url.pathname === postPath) {
       res.writeHead(204, {
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'content-type'
       });
       res.end();
@@ -405,13 +299,7 @@ const httpServer = createServer(
       return;
     }
 
-    // Stateless JSON-RPC endpoint (POST to /mcp directly)
-    if (req.method === 'POST' && url.pathname === ssePath) {
-      await handleStatelessJsonRpc(req, res);
-      return;
-    }
-
-    // POST messages endpoint
+    // POST messages endpoint (SSE only, no stateless)
     if (req.method === 'POST' && url.pathname === postPath) {
       await handlePostMessage(req, res, url);
       return;
