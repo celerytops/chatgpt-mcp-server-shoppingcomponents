@@ -211,9 +211,10 @@ async function handleSseRequest(res) {
 
   sessions.set(sessionId, { server, transport });
 
-  transport.onclose = async () => {
+  transport.onclose = () => {
+    console.log(`✗ SSE session ${sessionId} closed`);
     sessions.delete(sessionId);
-    await server.close();
+    // Don't call server.close() here - it creates a circular reference!
   };
 
   transport.onerror = (error) => {
@@ -225,7 +226,7 @@ async function handleSseRequest(res) {
     console.log(`✓ SSE session ${sessionId} connected`);
   } catch (error) {
     sessions.delete(sessionId);
-    console.error('Failed to start SSE session', error);
+    console.error('Failed to start SSE session:', error.message);
     if (!res.headersSent) {
       res.writeHead(500).end('Failed to establish SSE connection');
     }
