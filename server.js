@@ -155,6 +155,7 @@ class TargetAuthMCPServer {
   async handleToolCall(toolName, args) {
     const baseUrl = process.env.BASE_URL || `http://localhost:${PORT}`;
     let result;
+    let componentUrl = null;
 
     switch (toolName) {
       case 'authenticate_user':
@@ -164,6 +165,7 @@ class TargetAuthMCPServer {
           sessionId: sessionId,
           message: args?.message || 'Sign in to your Target account'
         };
+        componentUrl = `${baseUrl}/components/auth.html`;
         break;
 
       case 'get_user_profile':
@@ -203,7 +205,7 @@ class TargetAuthMCPServer {
         throw new Error(`Unknown tool: ${toolName}`);
     }
 
-    return {
+    const response = {
       content: [
         {
           type: 'text',
@@ -211,6 +213,15 @@ class TargetAuthMCPServer {
         }
       ]
     };
+
+    // Add component metadata if this tool has a UI component
+    if (componentUrl) {
+      response._meta = {
+        'openai/outputTemplate': componentUrl
+      };
+    }
+
+    return response;
   }
 
   /**
