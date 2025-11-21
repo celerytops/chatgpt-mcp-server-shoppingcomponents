@@ -54,10 +54,9 @@ app.get('/mcp', (req, res) => {
   res.json(getMCPMetadata());
 });
 
-// MCP Tools Definition
-app.post('/mcp/tools/list', (req, res) => {
-  const baseUrl = getBaseUrl(req);
-  res.json({
+// MCP Tools Definition helper
+function getMCPTools(baseUrl) {
+  return {
     tools: [
       {
         name: "authenticate_user",
@@ -93,7 +92,25 @@ app.post('/mcp/tools/list', (req, res) => {
         }
       }
     ]
-  });
+  };
+}
+
+// MCP Tools Definition (standard endpoint)
+app.post('/mcp/tools/list', (req, res) => {
+  const baseUrl = getBaseUrl(req);
+  res.json(getMCPTools(baseUrl));
+});
+
+// MCP Tools Definition (alternative endpoint)
+app.post('/mcp', (req, res) => {
+  const baseUrl = getBaseUrl(req);
+  const { method } = req.body;
+  
+  if (method === 'tools/list') {
+    res.json(getMCPTools(baseUrl));
+  } else {
+    res.status(404).json({ error: "Unknown method" });
+  }
 });
 
 // MCP Tool Execution
