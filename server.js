@@ -109,6 +109,10 @@ class TargetAuthMCPServer {
             }
           },
           additionalProperties: false
+        },
+        ui: {
+          type: 'component',
+          componentUrl: `${baseUrl}/components/auth.html`
         }
       },
       {
@@ -154,12 +158,10 @@ class TargetAuthMCPServer {
     switch (toolName) {
       case 'authenticate_user':
         const sessionId = generateSessionId();
+        // Return data for the component (accessible via window.openai.toolOutput)
         result = {
-          type: 'component',
-          componentUrl: `${baseUrl}/components/auth.html`,
           sessionId: sessionId,
-          message: args?.message || 'Sign in to your Target account',
-          instructions: 'A login form will be displayed. After the user authenticates, use get_user_profile with the sessionId to retrieve their information.'
+          message: args?.message || 'Sign in to your Target account'
         };
         break;
 
