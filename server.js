@@ -32,8 +32,8 @@ function getBaseUrl(req) {
 app.get('/.well-known/mcp.json', (req, res) => {
   const baseUrl = getBaseUrl(req);
   res.json({
-    "name": "Target Team Member Authentication",
-    "description": "Target team member authentication and profile access",
+    "name": "Target Customer Authentication",
+    "description": "Target customer authentication and profile access",
     "version": "1.0.0",
     "capabilities": {
       "tools": true,
@@ -52,7 +52,7 @@ app.post('/mcp/tools/list', (req, res) => {
     tools: [
       {
         name: "authenticate_user",
-        description: "Display Target team member authentication form",
+        description: "Display Target customer authentication form",
         inputSchema: {
           type: "object",
           properties: {
@@ -69,7 +69,7 @@ app.post('/mcp/tools/list', (req, res) => {
       },
       {
         name: "get_user_profile",
-        description: "Get the authenticated Target team member's profile information",
+        description: "Get the authenticated Target customer's profile information",
         inputSchema: {
           type: "object",
           properties: {}
@@ -77,7 +77,7 @@ app.post('/mcp/tools/list', (req, res) => {
       },
       {
         name: "logout_user",
-        description: "Log out the current Target team member",
+        description: "Log out the current Target customer",
         inputSchema: {
           type: "object",
           properties: {}
@@ -102,7 +102,7 @@ app.post('/mcp/tools/call', (req, res) => {
             type: "component",
             componentUrl: `${baseUrl}/components/auth.html`,
             data: {
-              message: args?.message || "Sign in with your Target credentials",
+              message: args?.message || "Sign in to your Target account",
               sessionId: currentSessionId
             }
           }
@@ -117,7 +117,7 @@ app.post('/mcp/tools/call', (req, res) => {
           content: [
             {
               type: "text",
-              text: `✓ Authenticated as ${session.user.name}\nEmail: ${session.user.email}\nEmployee ID: ${session.user.employeeId}\nDepartment: ${session.user.department}`
+              text: `✓ Authenticated as ${session.user.name}\nEmail: ${session.user.email}\nCircle Rewards: ${session.user.rewardsMember}\nMember Since: ${session.user.memberSince}`
             }
           ]
         });
@@ -171,13 +171,13 @@ app.post('/api/authenticate', (req, res) => {
   // Accept any email/password combination
   if (email && password) {
     const user = {
-      id: "TGT-001234",
-      email: "lauren.bailey@target.com",
+      id: "CUST-89234",
+      email: "lauren.bailey@gmail.com",
       name: "Lauren Bailey",
-      employeeId: "TGT-001234",
-      department: "Store Operations",
-      storeNumber: "T-2847",
-      position: "Team Lead",
+      phone: "(555) 123-4567",
+      rewardsMember: "Circle Member",
+      memberSince: "2019",
+      accountStatus: "Active",
       authenticatedAt: new Date().toISOString()
     };
 
@@ -218,7 +218,7 @@ app.get('/privacy', (req, res) => {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Privacy Policy - Target Team Member Authentication</title>
+  <title>Privacy Policy - Target Customer Authentication</title>
   <style>
     body {
       font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -327,7 +327,7 @@ app.get('/privacy', (req, res) => {
   <hr style="margin: 40px 0; border: none; border-top: 1px solid #ccc;">
   
   <p style="text-align: center; color: #666; font-size: 14px;">
-    Target Team Member Authentication Demo<br>
+    Target Customer Authentication Demo<br>
     Demonstration Application Only
   </p>
 </body>
@@ -341,8 +341,8 @@ app.get('/openapi.json', (req, res) => {
   res.json({
     "openapi": "3.1.0",
     "info": {
-      "title": "Target Team Member Authentication API",
-      "description": "API for Target team member authentication and profile management. This allows ChatGPT to authenticate users and retrieve their profile information. This is a demonstration application that always returns the same test user profile.",
+      "title": "Target Customer Authentication API",
+      "description": "API for Target customer authentication and profile management. This allows ChatGPT to authenticate customers and retrieve their profile information. This is a demonstration application that always returns the same test user profile.",
       "version": "1.0.0",
       "x-privacy-policy-url": `${baseUrl}/privacy`
     },
@@ -356,8 +356,8 @@ app.get('/openapi.json', (req, res) => {
       "/api/actions/authenticate": {
         "post": {
           "operationId": "authenticateUser",
-          "summary": "Authenticate a Target team member",
-          "description": "Authenticates a Target team member and returns their profile. Always returns Lauren Bailey's profile for demo purposes.",
+          "summary": "Authenticate a Target customer",
+          "description": "Authenticates a Target customer and returns their profile. Always returns Lauren Bailey's profile for demo purposes.",
           "requestBody": {
             "required": true,
             "content": {
@@ -367,11 +367,11 @@ app.get('/openapi.json', (req, res) => {
                   "properties": {
                     "email": {
                       "type": "string",
-                      "description": "Team member's Target email address"
+                      "description": "Customer's email address"
                     },
                     "password": {
                       "type": "string",
-                      "description": "Team member's password"
+                      "description": "Customer's password"
                     }
                   },
                   "required": ["email", "password"]
@@ -431,7 +431,7 @@ app.get('/openapi.json', (req, res) => {
         "get": {
           "operationId": "getUserProfile",
           "summary": "Get authenticated user's profile",
-          "description": "Returns the currently authenticated Target team member's profile information",
+          "description": "Returns the currently authenticated Target customer's profile information",
           "parameters": [
             {
               "name": "sessionId",
@@ -486,7 +486,7 @@ app.get('/openapi.json', (req, res) => {
         "post": {
           "operationId": "logoutUser",
           "summary": "Log out the current user",
-          "description": "Ends the current Target team member's session",
+          "description": "Ends the current Target customer's session",
           "requestBody": {
             "required": true,
             "content": {
@@ -537,13 +537,13 @@ app.post('/api/actions/authenticate', (req, res) => {
   if (email && password) {
     const sessionId = generateSessionId();
     const user = {
-      id: "TGT-001234",
-      email: "lauren.bailey@target.com",
+      id: "CUST-89234",
+      email: "lauren.bailey@gmail.com",
       name: "Lauren Bailey",
-      employeeId: "TGT-001234",
-      department: "Store Operations",
-      storeNumber: "T-2847",
-      position: "Team Lead",
+      phone: "(555) 123-4567",
+      rewardsMember: "Circle Member",
+      memberSince: "2019",
+      accountStatus: "Active",
       authenticatedAt: new Date().toISOString()
     };
 
@@ -607,7 +607,7 @@ function generateUserId() {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`\n🚀 Target Authentication MCP Server`);
+  console.log(`\n🚀 Target Customer Authentication MCP Server`);
   console.log(`\n📍 Server running on port ${PORT}`);
   
   if (isProduction) {
@@ -625,6 +625,6 @@ app.listen(PORT, () => {
     console.log(`   Auth Component: http://localhost:${PORT}/components/auth.html`);
   }
   
-  console.log(`\n✅ Ready to authenticate Target team members\n`);
+  console.log(`\n✅ Ready to authenticate Target customers\n`);
 });
 
