@@ -1,22 +1,24 @@
 #!/usr/bin/env node
 
 /**
- * MCP Server for Target Customer Authentication
- * 
- * Provides both MCP (Model Context Protocol) and REST API endpoints
- * for customer authentication and profile management.
+ * Target Customer Authentication MCP Server
+ * Following the official OpenAI Apps SDK patterns
  */
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import {
   CallToolRequestSchema,
+  ListResourcesRequestSchema,
+  ReadResourceRequestSchema,
+  ListResourceTemplatesRequestSchema,
   ListToolsRequestSchema
 } from '@modelcontextprotocol/sdk/types.js';
 import express from 'express';
 import cors from 'cors';
 import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+import { dirname, join } from 'path';
+import { readFileSync, existsSync } from 'fs';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -25,707 +27,560 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const PORT = process.env.PORT || 3000;
-const isProduction = process.env.NODE_ENV === 'production';
 
 // In-memory session storage
 const sessions = new Map();
+const mcpSessions = new Map();
 
 // Helper functions
 function generateSessionId() {
   return 'sess_' + Math.random().toString(36).substring(2, 15);
 }
 
-function getBaseUrl(req) {
-  const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'http';
-  const host = req.headers['x-forwarded-host'] || req.headers.host || `localhost:${PORT}`;
-  return `${protocol}://${host}`;
+function readWidgetHtml(componentName) {
+  const htmlPath = join(__dirname, 'public', 'components', `${componentName}.html`);
+  
+  if (!existsSync(htmlPath)) {
+    throw new Error(`Widget HTML for "${componentName}" not found at ${htmlPath}`);
+  }
+  
+  return readFileSync(htmlPath, 'utf8');
+}
+
+// Demo customer data
+const demoUser = {
+  id: 'cust_lauren_bailey',
+  name: 'Lauren Bailey',
+  email: 'lauren.bailey@example.com',
+  phone: '(555) 123-4567',
+  rewardsMember: true,
+  circleStatus: 'Gold',
+  lifetimeSavings: '$847.32',
+  recentOrders: 3,
+  favoriteStore: 'Target Minneapolis North',
+  memberSince: '2019-03-15'
+};
+
+// Widget configuration
+const AUTH_WIDGET = {
+  id: 'authenticate_user',
+  title: 'Target Customer Sign In',
+  templateUri: 'ui://widget/target-auth.html',
+  invoking: 'Opening Target sign-in',
+  invoked: 'Sign-in form ready',
+  html: readWidgetHtml('auth')
+};
+
+// Widget metadata helpers
+function widgetDescriptorMeta(widget) {
+  return {
+    'openai/outputTemplate': widget.templateUri,
+    'openai/toolInvocation/invoking': widget.invoking,
+    'openai/toolInvocation/invoked': widget.invoked,
+    'openai/widgetAccessible': true,
+    'openai/resultCanProduceWidget': true
+  };
+}
+
+function widgetInvocationMeta(widget) {
+  return {
+    'openai/toolInvocation/invoking': widget.invoking,
+    'openai/toolInvocation/invoked': widget.invoked
+  };
 }
 
 /**
- * MCP Server Implementation
+ * Create MCP Server with proper resource and tool handlers
  */
-class TargetAuthMCPServer {
-  constructor() {
-    this.server = new Server(
-      {
-        name: 'target-customer-auth',
-        version: '1.0.0',
-      },
-      {
-        capabilities: {
-          tools: {},
-        },
+function createTargetAuthServer() {
+  const server = new Server(
+    {
+      name: 'target-auth',
+      version: '1.0.0'
+    },
+    {
+      capabilities: {
+        resources: {},
+        tools: {}
       }
-    );
-
-    this.setupHandlers();
-  }
-
-  /**
-   * Setup MCP request handlers
-   */
-  setupHandlers() {
-    // List available tools
-    this.server.setRequestHandler(ListToolsRequestSchema, async () => ({
-      tools: this.getTools(),
-    }));
-
-    // Handle tool calls
-    this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
-      try {
-        return await this.handleToolCall(request.params.name, request.params.arguments);
-      } catch (error) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify({
-                error: true,
-                message: error instanceof Error ? error.message : 'Unknown error occurred'
-              }, null, 2)
-            }
-          ]
-        };
-      }
-    });
-  }
-
-  /**
-   * Define all available MCP tools
-   */
-  getTools(baseUrl) {
-    // Use provided baseUrl or fallback
-    const url = baseUrl || process.env.BASE_URL || `http://localhost:${PORT}`;
-    
-    return [
-      {
-        name: 'authenticate_user',
-        description: 'Display Target customer authentication form. This shows a beautiful Target-branded login component.',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            message: {
-              type: 'string',
-              description: 'Optional message to show to the user'
-            }
-          },
-          additionalProperties: false
-        },
-        ui: {
-          type: 'component',
-          componentUrl: `${url}/components/auth.html`
-        }
-      },
-      {
-        name: 'get_user_profile',
-        description: 'Get the authenticated Target customer\'s profile information including Circle rewards status.',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            sessionId: {
-              type: 'string',
-              description: 'Session ID from authentication'
-            }
-          },
-          required: ['sessionId'],
-          additionalProperties: false
-        }
-      },
-      {
-        name: 'logout_user',
-        description: 'Log out the current Target customer and end their session.',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            sessionId: {
-              type: 'string',
-              description: 'Session ID to terminate'
-            }
-          },
-          required: ['sessionId'],
-          additionalProperties: false
-        }
-      }
-    ];
-  }
-
-  /**
-   * Handle tool calls
-   */
-  async handleToolCall(toolName, args) {
-    const baseUrl = process.env.BASE_URL || `http://localhost:${PORT}`;
-    let result;
-    let componentUrl = null;
-
-    switch (toolName) {
-      case 'authenticate_user':
-        const sessionId = generateSessionId();
-        // Return data for the component (accessible via window.openai.toolOutput)
-        result = {
-          sessionId: sessionId,
-          message: args?.message || 'Sign in to your Target account'
-        };
-        componentUrl = `${baseUrl}/components/auth.html`;
-        break;
-
-      case 'get_user_profile':
-        const session = sessions.get(args.sessionId);
-        if (session && session.user) {
-          result = {
-            authenticated: true,
-            user: session.user,
-            message: `Authenticated as ${session.user.name}`
-          };
-        } else {
-          result = {
-            authenticated: false,
-            error: 'Not authenticated. Please sign in first.',
-            sessionId: args.sessionId
-          };
-        }
-        break;
-
-      case 'logout_user':
-        if (args.sessionId && sessions.has(args.sessionId)) {
-          const userName = sessions.get(args.sessionId).user.name;
-          sessions.delete(args.sessionId);
-          result = {
-            success: true,
-            message: `${userName} has been signed out successfully.`
-          };
-        } else {
-          result = {
-            success: false,
-            message: 'No active session found.'
-          };
-        }
-        break;
-
-      default:
-        throw new Error(`Unknown tool: ${toolName}`);
     }
+  );
 
-    const response = {
-      content: [
+  // List available resources (widgets)
+  server.setRequestHandler(
+    ListResourcesRequestSchema,
+    async (_request) => ({
+      resources: [
         {
-          type: 'text',
-          text: JSON.stringify(result, null, 2)
+          uri: AUTH_WIDGET.templateUri,
+          name: AUTH_WIDGET.title,
+          description: `${AUTH_WIDGET.title} widget markup`,
+          mimeType: 'text/html+skybridge',
+          _meta: widgetDescriptorMeta(AUTH_WIDGET)
         }
       ]
-    };
+    })
+  );
 
-    // Add component metadata if this tool has a UI component
-    if (componentUrl) {
-      response._meta = {
-        'openai/outputTemplate': componentUrl
-      };
-    }
-
-    return response;
-  }
-
-  /**
-   * Create a new MCP Server instance for a connection
-   */
-  createServerInstance() {
-    const server = new Server(
-      {
-        name: 'target-customer-auth',
-        version: '1.0.0',
-      },
-      {
-        capabilities: {
-          tools: {},
-        },
-      }
-    );
-
-    // Setup handlers for this instance
-    server.setRequestHandler(ListToolsRequestSchema, async () => ({
-      tools: this.getTools(),
-    }));
-
-    server.setRequestHandler(CallToolRequestSchema, async (request) => {
-      try {
-        return await this.handleToolCall(request.params.name, request.params.arguments);
-      } catch (error) {
+  // Read resource content (serve widget HTML)
+  server.setRequestHandler(
+    ReadResourceRequestSchema,
+    async (request) => {
+      if (request.params.uri === AUTH_WIDGET.templateUri) {
         return {
-          content: [
+          contents: [
             {
-              type: 'text',
-              text: JSON.stringify({
-                error: true,
-                message: error instanceof Error ? error.message : 'Unknown error occurred'
-              }, null, 2)
+              uri: AUTH_WIDGET.templateUri,
+              mimeType: 'text/html+skybridge',
+              text: AUTH_WIDGET.html,
+              _meta: widgetDescriptorMeta(AUTH_WIDGET)
             }
           ]
         };
       }
-    });
+      
+      throw new Error(`Unknown resource: ${request.params.uri}`);
+    }
+  );
 
-    return server;
-  }
-
-  /**
-   * Start HTTP server with MCP and REST endpoints
-   */
-  async startHttp(port = 3000) {
-    const app = express();
-    
-    // Enable CORS
-    app.use(cors());
-    app.use(express.json());
-    app.use(express.static('public'));
-
-    // Root endpoint
-    app.get('/', (req, res) => {
-      const baseUrl = getBaseUrl(req);
-      res.json({
-        name: 'Target Customer Authentication',
-        version: '1.0.0',
-        description: 'MCP server for Target customer authentication',
-        endpoints: {
-          mcp: `${baseUrl}/mcp`,
-          openapi_schema: `${baseUrl}/openapi.json`,
-          privacy_policy: `${baseUrl}/privacy`,
-          auth_component: `${baseUrl}/components/auth.html`
+  // List resource templates
+  server.setRequestHandler(
+    ListResourceTemplatesRequestSchema,
+    async (_request) => ({
+      resourceTemplates: [
+        {
+          uriTemplate: AUTH_WIDGET.templateUri,
+          name: AUTH_WIDGET.title,
+          description: `${AUTH_WIDGET.title} widget markup`,
+          mimeType: 'text/html+skybridge',
+          _meta: widgetDescriptorMeta(AUTH_WIDGET)
         }
-      });
-    });
+      ]
+    })
+  );
 
-    // Health check
-    app.get('/health', (req, res) => {
-      res.json({ status: 'healthy', service: 'target-customer-auth', version: '1.0.0' });
-    });
-
-    // Store active MCP sessions
-    const mcpSessions = new Map();
-
-    // MCP endpoint - POST for JSON-RPC
-    app.post('/mcp', async (req, res) => {
-      const baseUrl = getBaseUrl(req);
-      
-      console.log(`MCP POST request - Method: ${req.body?.method}`);
-      
-      try {
-        const jsonrpcRequest = req.body;
-        
-        // Validate JSON-RPC request
-        if (!jsonrpcRequest || jsonrpcRequest.jsonrpc !== '2.0') {
-          return res.status(200).json({
-            jsonrpc: '2.0',
-            error: {
-              code: -32600,
-              message: 'Invalid Request: Not a valid JSON-RPC 2.0 request'
+  // List available tools
+  server.setRequestHandler(
+    ListToolsRequestSchema,
+    async (_request) => ({
+      tools: [
+        {
+          name: 'authenticate_user',
+          description: 'Display Target customer authentication form. Shows a beautiful Target-branded login component where customers can sign in.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              message: {
+                type: 'string',
+                description: 'Optional message to show to the user'
+              }
             },
-            id: null
-          });
-        }
-
-        let result;
-        
-        switch (jsonrpcRequest.method) {
-          case 'initialize':
-            result = {
-              protocolVersion: '2024-11-05',
-              capabilities: {
-                tools: {}
-              },
-              serverInfo: {
-                name: 'target-customer-auth',
-                version: '1.0.0'
-              }
-            };
-            break;
-
-          case 'tools/list':
-            result = {
-              tools: this.getTools(baseUrl)
-            };
-            break;
-
-          case 'tools/call':
-            const toolName = jsonrpcRequest.params?.name;
-            const toolArgs = jsonrpcRequest.params?.arguments || {};
-            
-            if (!toolName) {
-              throw new Error('Tool name is required');
-            }
-
-            // Set base URL for tool execution
-            process.env.BASE_URL = baseUrl;
-            
-            const toolResult = await this.handleToolCall(toolName, toolArgs);
-            result = toolResult;
-            break;
-
-          default:
-            return res.status(200).json({
-              jsonrpc: '2.0',
-              error: {
-                code: -32601,
-                message: `Method not found: ${jsonrpcRequest.method}`
-              },
-              id: jsonrpcRequest.id
-            });
-        }
-
-        // Send successful response
-        res.status(200).json({
-          jsonrpc: '2.0',
-          result: result,
-          id: jsonrpcRequest.id
-        });
-
-      } catch (error) {
-        console.error('Error handling JSON-RPC request:', error);
-        
-        res.status(200).json({
-          jsonrpc: '2.0',
-          error: {
-            code: -32603,
-            message: error instanceof Error ? error.message : 'Internal error'
+            additionalProperties: false
           },
-          id: req.body?.id || null
-        });
-      }
-    });
-
-    // MCP endpoint - GET (not supported for ChatGPT, use POST)
-    app.get('/mcp', (req, res) => {
-      res.status(200).json({
-        error: 'SSE not supported',
-        message: 'Please use POST with JSON-RPC 2.0 protocol',
-        example: {
-          method: 'POST',
-          body: {
-            jsonrpc: '2.0',
-            method: 'initialize',
-            params: {},
-            id: 1
+          title: AUTH_WIDGET.title,
+          _meta: widgetDescriptorMeta(AUTH_WIDGET),
+          annotations: {
+            destructiveHint: false,
+            openWorldHint: false,
+            readOnlyHint: false
           }
-        }
-      });
-    });
-
-    // REST API Endpoints
-
-    // Authentication endpoint (called by component)
-    app.post('/api/authenticate', (req, res) => {
-      const { email, password, sessionId } = req.body;
-
-      if (email && password) {
-        const user = {
-          id: "CUST-89234",
-          email: "lauren.bailey@gmail.com",
-          name: "Lauren Bailey",
-          phone: "(555) 123-4567",
-          rewardsMember: "Circle Member",
-          memberSince: "2019",
-          accountStatus: "Active",
-          authenticatedAt: new Date().toISOString()
-        };
-
-        sessions.set(sessionId, { user });
-
-        res.json({
-          success: true,
-          user
-        });
-      } else {
-        res.status(401).json({
-          success: false,
-          error: "Please enter both email and password."
-        });
-      }
-    });
-
-    // Session validation
-    app.get('/api/session/:sessionId', (req, res) => {
-      const session = sessions.get(req.params.sessionId);
-      if (session && session.user) {
-        res.json({
-          authenticated: true,
-          user: session.user
-        });
-      } else {
-        res.json({
-          authenticated: false
-        });
-      }
-    });
-
-    // REST API for GPT Actions
-    app.post('/api/actions/authenticate', (req, res) => {
-      const { email, password } = req.body;
-
-      if (email && password) {
-        const sessionId = generateSessionId();
-        const user = {
-          id: "CUST-89234",
-          email: "lauren.bailey@gmail.com",
-          name: "Lauren Bailey",
-          phone: "(555) 123-4567",
-          rewardsMember: "Circle Member",
-          memberSince: "2019",
-          accountStatus: "Active",
-          authenticatedAt: new Date().toISOString()
-        };
-
-        sessions.set(sessionId, { user });
-
-        res.json({
-          success: true,
-          user,
-          sessionId,
-          message: `Successfully authenticated as ${user.name}`
-        });
-      } else {
-        res.status(400).json({
-          success: false,
-          error: "Email and password are required"
-        });
-      }
-    });
-
-    app.get('/api/actions/profile', (req, res) => {
-      const sessionId = req.query.sessionId;
-      const session = sessions.get(sessionId);
-
-      if (session && session.user) {
-        res.json({
-          user: session.user
-        });
-      } else {
-        res.status(401).json({
-          error: "Not authenticated. Please sign in first."
-        });
-      }
-    });
-
-    app.post('/api/actions/logout', (req, res) => {
-      const { sessionId } = req.body;
-
-      if (sessionId && sessions.has(sessionId)) {
-        const userName = sessions.get(sessionId).user.name;
-        sessions.delete(sessionId);
-        res.json({
-          success: true,
-          message: `${userName} has been signed out successfully.`
-        });
-      } else {
-        res.json({
-          success: false,
-          message: "No active session found."
-        });
-      }
-    });
-
-    // OpenAPI Schema
-    app.get('/openapi.json', (req, res) => {
-      const baseUrl = getBaseUrl(req);
-      res.json({
-        "openapi": "3.1.0",
-        "info": {
-          "title": "Target Customer Authentication API",
-          "description": "API for Target customer authentication and profile management.",
-          "version": "1.0.0",
-          "x-privacy-policy-url": `${baseUrl}/privacy`
         },
-        "servers": [
-          {
-            "url": baseUrl,
-            "description": "Target Authentication Server"
+        {
+          name: 'get_user_profile',
+          description: 'Get the authenticated Target customer\'s profile information including Circle rewards status.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              sessionId: {
+                type: 'string',
+                description: 'Session ID from authentication'
+              }
+            },
+            required: ['sessionId'],
+            additionalProperties: false
+          },
+          annotations: {
+            destructiveHint: false,
+            openWorldHint: false,
+            readOnlyHint: true
           }
-        ],
-        "paths": {
-          "/api/actions/authenticate": {
-            "post": {
-              "operationId": "authenticateUser",
-              "summary": "Authenticate a Target customer",
-              "description": "Authenticates a Target customer and returns their profile.",
-              "requestBody": {
-                "required": true,
-                "content": {
-                  "application/json": {
-                    "schema": {
-                      "type": "object",
-                      "properties": {
-                        "email": {
-                          "type": "string",
-                          "description": "Customer's email address"
-                        },
-                        "password": {
-                          "type": "string",
-                          "description": "Customer's password"
-                        }
-                      },
-                      "required": ["email", "password"]
-                    }
-                  }
-                }
-              },
-              "responses": {
-                "200": {
-                  "description": "Successfully authenticated"
-                }
+        },
+        {
+          name: 'logout_user',
+          description: 'Log out the current Target customer and end their session.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              sessionId: {
+                type: 'string',
+                description: 'Session ID to terminate'
               }
-            }
+            },
+            required: ['sessionId'],
+            additionalProperties: false
           },
-          "/api/actions/profile": {
-            "get": {
-              "operationId": "getUserProfile",
-              "summary": "Get authenticated user's profile",
-              "description": "Returns the currently authenticated Target customer's profile",
-              "parameters": [
-                {
-                  "name": "sessionId",
-                  "in": "query",
-                  "required": true,
-                  "schema": {
-                    "type": "string"
-                  }
-                }
-              ],
-              "responses": {
-                "200": {
-                  "description": "User profile retrieved successfully"
-                }
-              }
-            }
-          },
-          "/api/actions/logout": {
-            "post": {
-              "operationId": "logoutUser",
-              "summary": "Log out the current user",
-              "description": "Ends the current Target customer's session",
-              "requestBody": {
-                "required": true,
-                "content": {
-                  "application/json": {
-                    "schema": {
-                      "type": "object",
-                      "properties": {
-                        "sessionId": {
-                          "type": "string"
-                        }
-                      },
-                      "required": ["sessionId"]
-                    }
-                  }
-                }
-              },
-              "responses": {
-                "200": {
-                  "description": "Successfully logged out"
-                }
-              }
-            }
+          annotations: {
+            destructiveHint: false,
+            openWorldHint: false,
+            readOnlyHint: false
           }
         }
-      });
-    });
+      ]
+    })
+  );
 
-    // Privacy Policy
-    app.get('/privacy', (req, res) => {
-      res.type('html').send(`
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Privacy Policy - Target Customer Authentication</title>
-  <style>
-    body {
-      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-      line-height: 1.6;
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 20px;
-      color: #333;
-    }
-    h1 {
-      color: #cc0000;
-      border-bottom: 3px solid #cc0000;
-      padding-bottom: 10px;
-    }
-    h2 {
-      color: #cc0000;
-      margin-top: 30px;
-    }
-    .last-updated {
-      color: #666;
-      font-style: italic;
-    }
-    .demo-notice {
-      background: #fff3cd;
-      border-left: 4px solid #cc0000;
-      padding: 15px;
-      margin: 20px 0;
-    }
-  </style>
-</head>
-<body>
-  <h1>Privacy Policy</h1>
-  <p class="last-updated">Last Updated: November 21, 2024</p>
-  
-  <div class="demo-notice">
-    <strong>Demo Application Notice:</strong> This is a demonstration application. 
-    All authentication returns the same test user profile (Lauren Bailey) regardless 
-    of credentials provided. No real user data is collected or stored.
-  </div>
+  // Handle tool calls
+  server.setRequestHandler(
+    CallToolRequestSchema,
+    async (request) => {
+      const toolName = request.params.name;
+      const args = request.params.arguments || {};
 
-  <h2>1. Information We Collect</h2>
-  <p>This application is a demonstration component and does not collect, store, or process real personal information.</p>
+      switch (toolName) {
+        case 'authenticate_user': {
+          const sessionId = generateSessionId();
+          
+          return {
+            content: [
+              {
+                type: 'text',
+                text: 'Please sign in to your Target account using the form below.'
+              }
+            ],
+            structuredContent: {
+              sessionId: sessionId,
+              message: args.message || 'Sign in to your Target account'
+            },
+            _meta: widgetInvocationMeta(AUTH_WIDGET)
+          };
+        }
 
-  <h2>2. Data Storage</h2>
-  <ul>
-    <li><strong>No Persistent Storage:</strong> No user data is written to databases</li>
-    <li><strong>Session Data:</strong> Temporary session identifiers stored in memory only</li>
-    <li><strong>Automatic Deletion:</strong> All session data cleared when server restarts</li>
-  </ul>
+        case 'get_user_profile': {
+          const session = sessions.get(args.sessionId);
+          
+          if (session && session.user) {
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify({
+                    authenticated: true,
+                    user: session.user,
+                    message: `Authenticated as ${session.user.name}`
+                  }, null, 2)
+                }
+              ]
+            };
+          } else {
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify({
+                    authenticated: false,
+                    error: 'Not authenticated. Please sign in first.',
+                    sessionId: args.sessionId
+                  }, null, 2)
+                }
+              ]
+            };
+          }
+        }
 
-  <h2>3. Security</h2>
-  <p>All communications are encrypted via HTTPS.</p>
+        case 'logout_user': {
+          if (args.sessionId && sessions.has(args.sessionId)) {
+            const userName = sessions.get(args.sessionId).user.name;
+            sessions.delete(args.sessionId);
+            
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify({
+                    success: true,
+                    message: `${userName} has been signed out successfully.`
+                  }, null, 2)
+                }
+              ]
+            };
+          } else {
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify({
+                    success: false,
+                    message: 'No active session found.'
+                  }, null, 2)
+                }
+              ]
+            };
+          }
+        }
 
-  <p style="text-align: center; color: #666; font-size: 14px; margin-top: 40px;">
-    Target Customer Authentication Demo<br>
-    Demonstration Application Only
-  </p>
-</body>
-</html>
-      `);
-    });
-
-    // Start server
-    app.listen(port, () => {
-      console.log(`\n🚀 Target Customer Authentication MCP Server`);
-      console.log(`\n📍 Server running on port ${port}`);
-      
-      if (isProduction) {
-        console.log(`\n🌐 Production Mode`);
-      } else {
-        console.log(`\n🔧 Development Mode`);
-        console.log(`\n🔗 Endpoints:`);
-        console.log(`   Root: http://localhost:${port}`);
-        console.log(`   MCP: http://localhost:${port}/mcp`);
-        console.log(`   OpenAPI: http://localhost:${port}/openapi.json`);
-        console.log(`   Auth UI: http://localhost:${port}/components/auth.html`);
+        default:
+          throw new Error(`Unknown tool: ${toolName}`);
       }
-      
-      console.log(`\n✅ Ready to authenticate Target customers\n`);
-    });
-  }
+    }
+  );
 
-  async start() {
-    const port = parseInt(process.env.PORT || '3000', 10);
-    await this.startHttp(port);
-  }
+  return server;
 }
 
-// Start the server
-const server = new TargetAuthMCPServer();
-server.start().catch((error) => {
-  console.error('Fatal error starting server:', error);
-  process.exit(1);
+/**
+ * Express App Setup
+ */
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+// Serve static files
+app.use(express.static('public'));
+
+// Root endpoint
+app.get('/', (req, res) => {
+  const baseUrl = process.env.BASE_URL || `http://localhost:${PORT}`;
+  res.json({
+    name: 'Target Customer Authentication MCP Server',
+    version: '1.0.0',
+    description: 'MCP server for Target customer authentication with UI components',
+    endpoints: {
+      mcp: `${baseUrl}/mcp`,
+      openapi: `${baseUrl}/openapi.json`,
+      privacy: `${baseUrl}/privacy`
+    },
+    capabilities: ['resources', 'tools', 'authentication']
+  });
+});
+
+// MCP SSE endpoint (GET /mcp)
+app.get('/mcp', async (req, res) => {
+  console.log('New SSE connection request');
+  
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'content-type');
+  
+  const server = createTargetAuthServer();
+  const transport = new SSEServerTransport('/mcp/messages', res);
+  const sessionId = transport.sessionId;
+  
+  mcpSessions.set(sessionId, { server, transport });
+  
+  transport.onclose = async () => {
+    console.log(`SSE session ${sessionId} closed`);
+    mcpSessions.delete(sessionId);
+    await server.close();
+  };
+  
+  transport.onerror = (error) => {
+    console.error('SSE transport error', error);
+  };
+  
+  try {
+    await server.connect(transport);
+    console.log(`SSE session ${sessionId} connected`);
+  } catch (error) {
+    console.error('Failed to start SSE session', error);
+    mcpSessions.delete(sessionId);
+    if (!res.headersSent) {
+      res.status(500).end('Failed to establish SSE connection');
+    }
+  }
+});
+
+// MCP message endpoint (POST /mcp/messages)
+app.post('/mcp/messages', async (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Headers', 'content-type');
+  
+  const sessionId = req.query.sessionId;
+  
+  if (!sessionId) {
+    return res.status(400).json({ error: 'Missing sessionId query parameter' });
+  }
+  
+  const session = mcpSessions.get(sessionId);
+  
+  if (!session) {
+    return res.status(404).json({ error: 'Unknown session' });
+  }
+  
+  try {
+    await session.transport.handlePostMessage(req, res);
+  } catch (error) {
+    console.error('Failed to process message', error);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Failed to process message' });
+    }
+  }
+});
+
+// OPTIONS handler for CORS
+app.options(['/mcp', '/mcp/messages'], (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'content-type');
+  res.status(204).end();
+});
+
+// Authentication API endpoint (for the component to call)
+app.post('/api/auth/login', (req, res) => {
+  const { email, password, sessionId } = req.body;
+  
+  // Demo: Accept any email/password
+  sessions.set(sessionId, {
+    user: demoUser,
+    authenticatedAt: new Date().toISOString()
+  });
+  
+  res.json({
+    success: true,
+    user: demoUser,
+    sessionId: sessionId
+  });
+});
+
+// OpenAPI schema for Custom GPT Actions
+app.get('/openapi.json', (req, res) => {
+  const baseUrl = process.env.BASE_URL || `http://localhost:${PORT}`;
+  
+  res.json({
+    openapi: '3.1.0',
+    info: {
+      title: 'Target Customer Authentication API',
+      version: '1.0.0',
+      description: 'API for Target customer authentication and profile management'
+    },
+    servers: [
+      {
+        url: baseUrl
+      }
+    ],
+    paths: {
+      '/api/auth/login': {
+        post: {
+          operationId: 'authenticateUser',
+          summary: 'Authenticate a Target customer',
+          description: 'Authenticate a customer with email and password',
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    email: {
+                      type: 'string',
+                      description: 'Customer email address'
+                    },
+                    password: {
+                      type: 'string',
+                      description: 'Customer password'
+                    },
+                    sessionId: {
+                      type: 'string',
+                      description: 'Session ID'
+                    }
+                  },
+                  required: ['email', 'password', 'sessionId']
+                }
+              }
+            }
+          },
+          responses: {
+            '200': {
+              description: 'Authentication successful',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      success: { type: 'boolean' },
+                      user: { type: 'object' },
+                      sessionId: { type: 'string' }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    'x-privacy-policy-url': `${baseUrl}/privacy`
+  });
+});
+
+// Privacy policy
+app.get('/privacy', (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Target Auth - Privacy Policy</title>
+      <style>
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+          max-width: 800px;
+          margin: 0 auto;
+          padding: 40px 20px;
+          line-height: 1.6;
+          color: #333;
+        }
+        h1 { color: #cc0000; }
+        h2 { color: #444; margin-top: 30px; }
+        .notice { background: #fff3cd; padding: 15px; border-radius: 5px; margin: 20px 0; }
+      </style>
+    </head>
+    <body>
+      <h1>Privacy Policy</h1>
+      <p><strong>Last Updated:</strong> November 21, 2025</p>
+      
+      <div class="notice">
+        <strong>⚠️ Demo Application:</strong> This is a demonstration application. No real authentication is performed.
+      </div>
+      
+      <h2>Data Collection</h2>
+      <p>This demo application:</p>
+      <ul>
+        <li>Does not collect or store any real customer data</li>
+        <li>Accepts any email/password combination for demonstration purposes</li>
+        <li>Returns a demo profile for "Lauren Bailey" regardless of input</li>
+        <li>Stores session data in memory only (cleared on server restart)</li>
+      </ul>
+      
+      <h2>Data Storage</h2>
+      <p>All data is stored temporarily in server memory and is automatically deleted when:</p>
+      <ul>
+        <li>The session expires</li>
+        <li>The server restarts</li>
+        <li>You explicitly log out</li>
+      </ul>
+      
+      <h2>Third-Party Services</h2>
+      <p>This application integrates with:</p>
+      <ul>
+        <li><strong>ChatGPT:</strong> via the OpenAI Apps SDK and Model Context Protocol</li>
+        <li><strong>Heroku:</strong> for hosting the demo server</li>
+      </ul>
+      
+      <h2>Contact</h2>
+      <p>For questions about this privacy policy, please contact the application administrator.</p>
+    </body>
+    </html>
+  `);
+});
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`\n🎯 Target Customer Authentication MCP Server`);
+  console.log(`📍 Running on: http://localhost:${PORT}`);
+  console.log(`\nEndpoints:`);
+  console.log(`  🔌 MCP: http://localhost:${PORT}/mcp`);
+  console.log(`  📋 OpenAPI: http://localhost:${PORT}/openapi.json`);
+  console.log(`  🔒 Privacy: http://localhost:${PORT}/privacy`);
+  console.log(`\nReady to connect to ChatGPT! 🚀\n`);
 });
