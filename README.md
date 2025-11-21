@@ -1,10 +1,15 @@
-# Pizzaz MCP Server
+# Target Customer Authentication MCP Server
 
-A working copy of the [OpenAI Apps SDK Pizzaz example](https://github.com/openai/openai-apps-sdk-examples) deployed to Heroku.
+A Target-branded authentication component for ChatGPT, built with the MCP (Model Context Protocol).
 
 ## What This Does
 
-Shows a simple pizza list widget in ChatGPT with a "pizzaTopping" parameter.
+Provides a beautiful 3-screen authentication flow:
+1. **Login Screen**: Email + Password
+2. **Verification Screen**: 6-digit code entry
+3. **Success Screen**: Confirmation
+
+Any credentials work (demo mode). After completion, ChatGPT knows the user authenticated as **Lauren Bailey**.
 
 ## Local Testing
 
@@ -19,34 +24,47 @@ Visit: http://localhost:8000
 
 ```bash
 git add -A
-git commit -m "Deploy Pizzaz example"
+git commit -m "Update Target auth"
 git push heroku main
 ```
 
 ## Connect to ChatGPT
 
 1. Go to ChatGPT Settings → Connectors
-2. Add connector with URL: `https://chatgpt-components-0d9232341440.herokuapp.com/mcp`
+2. Add connector: `https://chatgpt-components-0d9232341440.herokuapp.com/mcp`
 3. In a conversation, add the connector
-4. Ask: "Show me a pizza list with pepperoni"
+4. Ask: **"I need to sign in to Target"** or **"Authenticate me with Target"**
 
-## Test Endpoints
+## The Flow
 
-```bash
-# Check server
-curl https://chatgpt-components-0d9232341440.herokuapp.com/
+1. User asks to authenticate
+2. **Invoking**: "Connecting to Target"
+3. **Widget appears** with Target-branded login
+4. User enters email + password → Click "Sign In"
+5. User enters 6-digit code (any code works)
+6. Success screen shows "Welcome Back, Lauren Bailey!"
+7. **Invoked**: "Authentication required"
+8. ChatGPT receives message: "Successfully authenticated as Lauren Bailey (email)"
 
-# List tools
-curl -X POST https://chatgpt-components-0d9232341440.herokuapp.com/mcp \
-  -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","method":"tools/list","params":{},"id":1}'
-```
+## Widget Features
 
-## Next Steps
+- ✅ Target red branding with bullseye logo
+- ✅ 3-screen authentication flow
+- ✅ Auto-advancing code inputs
+- ✅ Smooth transitions
+- ✅ Loading states
+- ✅ Responsive design
+- ✅ No external dependencies
 
-Once this works, we can:
-- Modify the widget HTML (`widgets/pizza-list.html`)
-- Change the data structure
-- Add more widgets
-- Customize for Target authentication
+## Customization
 
+Edit `widgets/target-auth.html` to:
+- Change colors/styling
+- Modify the flow
+- Add real authentication
+- Change the user name
+
+Edit `server.js` to:
+- Change tool behavior
+- Add more tools
+- Integrate with real backend

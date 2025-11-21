@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Target Sign In</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+      background: #f5f5f5;
+      padding: 16px;
+    }
+
+    .container {
+      max-width: 420px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      padding: 32px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .target-logo {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 16px;
+      background: linear-gradient(135deg, #cc0000 0%, #ff0000 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(204, 0, 0, 0.3);
+      position: relative;
+    }
+
+    .target-logo::before {
+      content: '';
+      position: absolute;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: white;
+    }
+
+    .target-logo::after {
+      content: '';
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #cc0000;
+    }
+
+    h1 {
+      font-size: 24px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: #666;
+      font-size: 14px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 500;
+      font-size: 14px;
+      color: #333;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #cc0000;
+      box-shadow: 0 0 0 3px rgba(204, 0, 0, 0.1);
+    }
+
+    .code-inputs {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin: 24px 0;
+    }
+
+    .code-input {
+      width: 48px;
+      height: 56px;
+      text-align: center;
+      font-size: 24px;
+      font-weight: 600;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+    }
+
+    .code-input:focus {
+      border-color: #cc0000;
+      box-shadow: 0 0 0 3px rgba(204, 0, 0, 0.1);
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 12px;
+      background: #cc0000;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-primary:hover {
+      background: #b30000;
+    }
+
+    .btn-primary:active {
+      background: #990000;
+    }
+
+    .btn-primary:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    .success-icon {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 16px;
+      background: #10b981;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 32px;
+      font-weight: bold;
+    }
+
+    .confirmation-text {
+      text-align: center;
+      margin-top: 16px;
+    }
+
+    .user-email {
+      color: #cc0000;
+      font-weight: 600;
+    }
+
+    .loading {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid #ffffff;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-right: 8px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .help-text {
+      text-align: center;
+      font-size: 13px;
+      color: #666;
+      margin-top: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="target-logo"></div>
+      <h1>Sign In</h1>
+      <p class="subtitle">Access your Target account</p>
+    </div>
+
+    <!-- Screen 1: Login -->
+    <div id="screen-login">
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input
+            type="email"
+            id="email"
+            placeholder="you@example.com"
+            required
+            autocomplete="email"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input
+            type="password"
+            id="password"
+            placeholder="Enter your password"
+            required
+            autocomplete="current-password"
+          />
+        </div>
+
+        <button type="submit" class="btn-primary" id="loginBtn">
+          Sign In
+        </button>
+      </form>
+    </div>
+
+    <!-- Screen 2: Verification Code -->
+    <div id="screen-verify" class="hidden">
+      <p class="subtitle" style="text-align: center; margin-bottom: 8px;">
+        Enter the 6-digit code sent to your phone
+      </p>
+      <p class="help-text" style="margin-top: 0; margin-bottom: 16px;">
+        Code: <strong>123456</strong> (any code works for demo)
+      </p>
+      
+      <form id="verifyForm">
+        <div class="code-inputs">
+          <input type="text" class="code-input" maxlength="1" data-index="0" />
+          <input type="text" class="code-input" maxlength="1" data-index="1" />
+          <input type="text" class="code-input" maxlength="1" data-index="2" />
+          <input type="text" class="code-input" maxlength="1" data-index="3" />
+          <input type="text" class="code-input" maxlength="1" data-index="4" />
+          <input type="text" class="code-input" maxlength="1" data-index="5" />
+        </div>
+
+        <button type="submit" class="btn-primary" id="verifyBtn">
+          Submit Code
+        </button>
+      </form>
+    </div>
+
+    <!-- Screen 3: Success -->
+    <div id="screen-success" class="hidden">
+      <div style="text-align: center;">
+        <div class="success-icon">✓</div>
+        <h1 style="margin-bottom: 8px;">Welcome Back!</h1>
+        <p class="subtitle">You're now signed in</p>
+        
+        <div class="confirmation-text">
+          <p style="margin: 16px 0;">
+            Authenticated as<br>
+            <span style="font-size: 18px; font-weight: 600; color: #333;">Lauren Bailey</span>
+          </p>
+          <p style="font-size: 14px; color: #666;">
+            <span class="user-email" id="userEmail"></span>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    console.log('Target Auth Widget loaded');
+    
+    // Get data from window.openai
+    const toolOutput = window.openai?.toolOutput || {};
+    const sessionId = toolOutput.sessionId || 'demo_' + Date.now();
+    
+    console.log('toolOutput:', toolOutput);
+    console.log('sessionId:', sessionId);
+    
+    let userEmail = '';
+    
+    // Screen 1: Login Form
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const loginBtn = document.getElementById('loginBtn');
+      
+      userEmail = email;
+      
+      // Show loading
+      loginBtn.disabled = true;
+      loginBtn.innerHTML = '<span class="loading"></span>Signing in...';
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // Move to verification screen
+      document.getElementById('screen-login').classList.add('hidden');
+      document.getElementById('screen-verify').classList.remove('hidden');
+      
+      // Focus first code input
+      document.querySelector('.code-input[data-index="0"]').focus();
+    });
+    
+    // Screen 2: Verification Code
+    const codeInputs = document.querySelectorAll('.code-input');
+    
+    // Auto-advance to next input
+    codeInputs.forEach((input, index) => {
+      input.addEventListener('input', (e) => {
+        if (e.target.value.length === 1 && index < codeInputs.length - 1) {
+          codeInputs[index + 1].focus();
+        }
+      });
+      
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && !e.target.value && index > 0) {
+          codeInputs[index - 1].focus();
+        }
+      });
+    });
+    
+    document.getElementById('verifyForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const code = Array.from(codeInputs).map(input => input.value).join('');
+      const verifyBtn = document.getElementById('verifyBtn');
+      
+      if (code.length !== 6) {
+        alert('Please enter all 6 digits');
+        return;
+      }
+      
+      // Show loading
+      verifyBtn.disabled = true;
+      verifyBtn.innerHTML = '<span class="loading"></span>Verifying...';
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // Move to success screen
+      document.getElementById('screen-verify').classList.add('hidden');
+      document.getElementById('screen-success').classList.remove('hidden');
+      document.getElementById('userEmail').textContent = userEmail;
+      
+      // Save widget state
+      if (window.openai?.setWidgetState) {
+        await window.openai.setWidgetState({
+          authenticated: true,
+          email: userEmail,
+          name: 'Lauren Bailey',
+          sessionId: sessionId
+        });
+        console.log('Widget state saved');
+      }
+      
+      // Notify ChatGPT
+      if (window.openai?.sendFollowUpMessage) {
+        await window.openai.sendFollowUpMessage({
+          prompt: `Successfully authenticated as Lauren Bailey (${userEmail}). Session ID: ${sessionId}`
+        });
+        console.log('Follow-up message sent');
+      }
+    });
+    
+    console.log('Target Auth Widget ready');
+  </script>
+</body>
+</html>
+

@@ -25,13 +25,13 @@ const WIDGETS_DIR = path.resolve(__dirname, 'widgets');
 
 // Widget configuration
 const widget = {
-  id: 'pizza-list',
-  title: 'Show Pizza List',
-  templateUri: 'ui://widget/pizza-list.html',
-  invoking: 'Hand-tossing a list',
-  invoked: 'Served a fresh list',
+  id: 'authenticate-target',
+  title: 'Target Customer Authentication',
+  templateUri: 'ui://widget/target-auth.html',
+  invoking: 'Connecting to Target',
+  invoked: 'Authentication required',
   html: null,
-  responseText: 'Rendered a pizza list!'
+  responseText: 'Please sign in to your Target account using the form above.'
 };
 
 // Read widget HTML
@@ -46,7 +46,7 @@ function readWidgetHtml(componentName) {
 }
 
 // Load widget HTML
-widget.html = readWidgetHtml('pizza-list');
+widget.html = readWidgetHtml('target-auth');
 
 // Widget metadata helpers
 function widgetDescriptorMeta(w) {
@@ -72,8 +72,8 @@ function widgetInvocationMeta(w) {
 function createPizzazServer() {
   const server = new Server(
     {
-      name: 'pizzaz-node',
-      version: '0.1.0'
+      name: 'target-auth',
+      version: '1.0.0'
     },
     {
       capabilities: {
@@ -143,16 +143,10 @@ function createPizzazServer() {
       tools: [
         {
           name: widget.id,
-          description: 'Show a list of the best pizza places. If the user mentions a specific pizza topping (like pepperoni, mushrooms, or cheese), pass it as the pizzaTopping parameter.',
+          description: 'Authenticate a Target customer. Shows a Target-branded login form where the customer can sign in with their email and password, then verify with a code.',
           inputSchema: {
             type: 'object',
-            properties: {
-              pizzaTopping: {
-                type: 'string',
-                description: 'The pizza topping the user wants to see (e.g., "pepperoni", "mushrooms", "cheese"). Extract this from the user\'s request.'
-              }
-            },
-            required: ['pizzaTopping'],
+            properties: {},
             additionalProperties: false
           },
           title: widget.title,
@@ -160,7 +154,7 @@ function createPizzazServer() {
           annotations: {
             destructiveHint: false,
             openWorldHint: false,
-            readOnlyHint: true
+            readOnlyHint: false
           }
         }
       ]
@@ -175,8 +169,8 @@ function createPizzazServer() {
         throw new Error(`Unknown tool: ${request.params.name}`);
       }
 
-      const args = request.params.arguments || {};
-      const pizzaTopping = args.pizzaTopping || 'pepperoni';
+      // Generate a session ID for this authentication
+      const sessionId = 'sess_' + Math.random().toString(36).substring(2, 15);
 
       return {
         content: [
@@ -186,7 +180,7 @@ function createPizzazServer() {
           }
         ],
         structuredContent: {
-          pizzaTopping: pizzaTopping
+          sessionId: sessionId
         },
         _meta: widgetInvocationMeta(widget)
       };
@@ -292,9 +286,9 @@ const httpServer = createServer(
     if (req.method === 'GET' && (url.pathname === '/' || url.pathname === '')) {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({
-        name: 'Pizzaz MCP Server',
-        version: '0.1.0',
-        description: 'Example MCP server from OpenAI Apps SDK',
+        name: 'Target Authentication MCP Server',
+        version: '1.0.0',
+        description: 'Target customer authentication component for ChatGPT',
         endpoints: {
           mcp: ssePath,
           messages: postPath
@@ -325,7 +319,7 @@ httpServer.on('clientError', (err, socket) => {
 });
 
 httpServer.listen(port, () => {
-  console.log(`\n🍕 Pizzaz MCP Server`);
+  console.log(`\n🎯 Target Authentication MCP Server`);
   console.log(`📍 Running on: http://localhost:${port}`);
   console.log(`\nEndpoints:`);
   console.log(`  🔌 MCP: http://localhost:${port}${ssePath}`);
