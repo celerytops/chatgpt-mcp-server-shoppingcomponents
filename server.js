@@ -61,6 +61,7 @@ function widgetDescriptorMeta(w) {
 
 function widgetInvocationMeta(w) {
   return {
+    'openai/outputTemplate': w.templateUri,
     'openai/toolInvocation/invoking': w.invoking,
     'openai/toolInvocation/invoked': w.invoked
   };
