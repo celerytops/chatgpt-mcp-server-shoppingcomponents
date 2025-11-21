@@ -377,28 +377,21 @@ class TargetAuthMCPServer {
       }
     });
 
-    // MCP endpoint - GET for SSE
-    app.get('/mcp', async (req, res) => {
-      console.log('MCP GET request (SSE) - establishing connection');
-      
-      try {
-        const sessionId = Math.random().toString(36).substring(7);
-        const serverInstance = this.createServerInstance();
-        mcpSessions.set(sessionId, serverInstance);
-        
-        const transport = new SSEServerTransport('/mcp', res);
-        await serverInstance.connect(transport);
-        
-        req.on('close', () => {
-          console.log(`Session ${sessionId}: Connection closed`);
-          mcpSessions.delete(sessionId);
-        });
-      } catch (error) {
-        console.error('Error establishing SSE connection:', error);
-        if (!res.headersSent) {
-          res.status(500).json({ error: 'Failed to establish SSE connection' });
+    // MCP endpoint - GET (not supported for ChatGPT, use POST)
+    app.get('/mcp', (req, res) => {
+      res.status(200).json({
+        error: 'SSE not supported',
+        message: 'Please use POST with JSON-RPC 2.0 protocol',
+        example: {
+          method: 'POST',
+          body: {
+            jsonrpc: '2.0',
+            method: 'initialize',
+            params: {},
+            id: 1
+          }
         }
-      }
+      });
     });
 
     // REST API Endpoints
