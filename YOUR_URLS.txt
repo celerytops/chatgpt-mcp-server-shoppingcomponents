@@ -54,15 +54,15 @@ Login Component:
 https://chatgpt-components-0d9232341440.herokuapp.com/components/auth.html
 
 ================================================================================
-  KEY INFO
+  KEY INFO - TARGET CUSTOMER AUTHENTICATION
 ================================================================================
 
 ✅ Any email/password combo works
-✅ Always authenticates as: Lauren Bailey
-✅ Employee ID: TGT-001234
-✅ Department: Store Operations
-✅ Position: Team Lead
-✅ Store: T-2847
+✅ Always authenticates as: Lauren Bailey (CUSTOMER)
+✅ Customer ID: CUST-89234
+✅ Email: lauren.bailey@gmail.com
+✅ Circle Member since 2019
+✅ Phone: (555) 123-4567
 
 ================================================================================
   DOCUMENTATION

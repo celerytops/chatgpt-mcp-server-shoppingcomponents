@@ -28,10 +28,9 @@ function getBaseUrl(req) {
   return `${protocol}://${host}`;
 }
 
-// MCP Server Metadata Endpoint
-app.get('/.well-known/mcp.json', (req, res) => {
-  const baseUrl = getBaseUrl(req);
-  res.json({
+// MCP metadata helper
+function getMCPMetadata() {
+  return {
     "name": "Target Customer Authentication",
     "description": "Target customer authentication and profile access",
     "version": "1.0.0",
@@ -42,7 +41,17 @@ app.get('/.well-known/mcp.json', (req, res) => {
     "oauth": {
       "enabled": false
     }
-  });
+  };
+}
+
+// MCP Server Metadata Endpoint (standard location)
+app.get('/.well-known/mcp.json', (req, res) => {
+  res.json(getMCPMetadata());
+});
+
+// MCP Server Metadata Endpoint (alternative /mcp location)
+app.get('/mcp', (req, res) => {
+  res.json(getMCPMetadata());
 });
 
 // MCP Tools Definition
