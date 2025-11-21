@@ -1,102 +1,79 @@
 #!/usr/bin/env node
 
 /**
- * Target Customer Authentication MCP Server
- * Following the official OpenAI Apps SDK patterns
+ * Pizzaz MCP Server (Node.js)
+ * Copied from https://github.com/openai/openai-apps-sdk-examples
  */
+
+import { createServer } from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
+import { URL, fileURLToPath } from 'node:url';
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import {
   CallToolRequestSchema,
-  ListResourcesRequestSchema,
-  ReadResourceRequestSchema,
   ListResourceTemplatesRequestSchema,
-  ListToolsRequestSchema
+  ListResourcesRequestSchema,
+  ListToolsRequestSchema,
+  ReadResourceRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
-import express from 'express';
-import cors from 'cors';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-import { readFileSync, existsSync } from 'fs';
-import dotenv from 'dotenv';
 
-dotenv.config();
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const WIDGETS_DIR = path.resolve(__dirname, 'widgets');
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+// Widget configuration
+const widget = {
+  id: 'pizza-list',
+  title: 'Show Pizza List',
+  templateUri: 'ui://widget/pizza-list.html',
+  invoking: 'Hand-tossing a list',
+  invoked: 'Served a fresh list',
+  html: null,
+  responseText: 'Rendered a pizza list!'
+};
 
-const PORT = process.env.PORT || 3000;
-
-// In-memory session storage
-const sessions = new Map();
-const mcpSessions = new Map();
-
-// Helper functions
-function generateSessionId() {
-  return 'sess_' + Math.random().toString(36).substring(2, 15);
-}
-
+// Read widget HTML
 function readWidgetHtml(componentName) {
-  const htmlPath = join(__dirname, 'public', 'components', `${componentName}.html`);
+  const htmlPath = path.join(WIDGETS_DIR, `${componentName}.html`);
   
-  if (!existsSync(htmlPath)) {
+  if (!fs.existsSync(htmlPath)) {
     throw new Error(`Widget HTML for "${componentName}" not found at ${htmlPath}`);
   }
   
-  return readFileSync(htmlPath, 'utf8');
+  return fs.readFileSync(htmlPath, 'utf8');
 }
 
-// Demo customer data
-const demoUser = {
-  id: 'cust_lauren_bailey',
-  name: 'Lauren Bailey',
-  email: 'lauren.bailey@example.com',
-  phone: '(555) 123-4567',
-  rewardsMember: true,
-  circleStatus: 'Gold',
-  lifetimeSavings: '$847.32',
-  recentOrders: 3,
-  favoriteStore: 'Target Minneapolis North',
-  memberSince: '2019-03-15'
-};
-
-// Widget configuration
-const AUTH_WIDGET = {
-  id: 'authenticate_user',
-  title: 'Target Customer Sign In',
-  templateUri: 'ui://widget/target-auth.html',
-  invoking: 'Opening Target sign-in',
-  invoked: 'Sign-in form ready',
-  html: readWidgetHtml('auth')
-};
+// Load widget HTML
+widget.html = readWidgetHtml('pizza-list');
 
 // Widget metadata helpers
-function widgetDescriptorMeta(widget) {
+function widgetDescriptorMeta(w) {
   return {
-    'openai/outputTemplate': widget.templateUri,
-    'openai/toolInvocation/invoking': widget.invoking,
-    'openai/toolInvocation/invoked': widget.invoked,
+    'openai/outputTemplate': w.templateUri,
+    'openai/toolInvocation/invoking': w.invoking,
+    'openai/toolInvocation/invoked': w.invoked,
     'openai/widgetAccessible': true,
     'openai/resultCanProduceWidget': true
   };
 }
 
-function widgetInvocationMeta(widget) {
+function widgetInvocationMeta(w) {
   return {
-    'openai/toolInvocation/invoking': widget.invoking,
-    'openai/toolInvocation/invoked': widget.invoked
+    'openai/toolInvocation/invoking': w.invoking,
+    'openai/toolInvocation/invoked': w.invoked
   };
 }
 
 /**
- * Create MCP Server with proper resource and tool handlers
+ * Create MCP Server
  */
-function createTargetAuthServer() {
+function createPizzazServer() {
   const server = new Server(
     {
-      name: 'target-auth',
-      version: '1.0.0'
+      name: 'pizzaz-node',
+      version: '0.1.0'
     },
     {
       capabilities: {
@@ -106,34 +83,34 @@ function createTargetAuthServer() {
     }
   );
 
-  // List available resources (widgets)
+  // List resources
   server.setRequestHandler(
     ListResourcesRequestSchema,
     async (_request) => ({
       resources: [
         {
-          uri: AUTH_WIDGET.templateUri,
-          name: AUTH_WIDGET.title,
-          description: `${AUTH_WIDGET.title} widget markup`,
+          uri: widget.templateUri,
+          name: widget.title,
+          description: `${widget.title} widget markup`,
           mimeType: 'text/html+skybridge',
-          _meta: widgetDescriptorMeta(AUTH_WIDGET)
+          _meta: widgetDescriptorMeta(widget)
         }
       ]
     })
   );
 
-  // Read resource content (serve widget HTML)
+  // Read resource
   server.setRequestHandler(
     ReadResourceRequestSchema,
     async (request) => {
-      if (request.params.uri === AUTH_WIDGET.templateUri) {
+      if (request.params.uri === widget.templateUri) {
         return {
           contents: [
             {
-              uri: AUTH_WIDGET.templateUri,
+              uri: widget.templateUri,
               mimeType: 'text/html+skybridge',
-              text: AUTH_WIDGET.html,
-              _meta: widgetDescriptorMeta(AUTH_WIDGET)
+              text: widget.html,
+              _meta: widgetDescriptorMeta(widget)
             }
           ]
         };
@@ -149,438 +126,209 @@ function createTargetAuthServer() {
     async (_request) => ({
       resourceTemplates: [
         {
-          uriTemplate: AUTH_WIDGET.templateUri,
-          name: AUTH_WIDGET.title,
-          description: `${AUTH_WIDGET.title} widget markup`,
+          uriTemplate: widget.templateUri,
+          name: widget.title,
+          description: `${widget.title} widget markup`,
           mimeType: 'text/html+skybridge',
-          _meta: widgetDescriptorMeta(AUTH_WIDGET)
+          _meta: widgetDescriptorMeta(widget)
         }
       ]
     })
   );
 
-  // List available tools
+  // List tools
   server.setRequestHandler(
     ListToolsRequestSchema,
     async (_request) => ({
       tools: [
         {
-          name: 'authenticate_user',
-          description: 'Display Target customer authentication form. Shows a beautiful Target-branded login component where customers can sign in.',
+          name: widget.id,
+          description: widget.title,
           inputSchema: {
             type: 'object',
             properties: {
-              message: {
+              pizzaTopping: {
                 type: 'string',
-                description: 'Optional message to show to the user'
+                description: 'Topping to mention when rendering the widget.'
               }
             },
+            required: ['pizzaTopping'],
             additionalProperties: false
           },
-          title: AUTH_WIDGET.title,
-          _meta: widgetDescriptorMeta(AUTH_WIDGET),
-          annotations: {
-            destructiveHint: false,
-            openWorldHint: false,
-            readOnlyHint: false
-          }
-        },
-        {
-          name: 'get_user_profile',
-          description: 'Get the authenticated Target customer\'s profile information including Circle rewards status.',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              sessionId: {
-                type: 'string',
-                description: 'Session ID from authentication'
-              }
-            },
-            required: ['sessionId'],
-            additionalProperties: false
-          },
+          title: widget.title,
+          _meta: widgetDescriptorMeta(widget),
           annotations: {
             destructiveHint: false,
             openWorldHint: false,
             readOnlyHint: true
-          }
-        },
-        {
-          name: 'logout_user',
-          description: 'Log out the current Target customer and end their session.',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              sessionId: {
-                type: 'string',
-                description: 'Session ID to terminate'
-              }
-            },
-            required: ['sessionId'],
-            additionalProperties: false
-          },
-          annotations: {
-            destructiveHint: false,
-            openWorldHint: false,
-            readOnlyHint: false
           }
         }
       ]
     })
   );
 
-  // Handle tool calls
+  // Call tool
   server.setRequestHandler(
     CallToolRequestSchema,
     async (request) => {
-      const toolName = request.params.name;
-      const args = request.params.arguments || {};
-
-      switch (toolName) {
-        case 'authenticate_user': {
-          const sessionId = generateSessionId();
-          
-          return {
-            content: [
-              {
-                type: 'text',
-                text: 'Please sign in to your Target account using the form below.'
-              }
-            ],
-            structuredContent: {
-              sessionId: sessionId,
-              message: args.message || 'Sign in to your Target account'
-            },
-            _meta: widgetInvocationMeta(AUTH_WIDGET)
-          };
-        }
-
-        case 'get_user_profile': {
-          const session = sessions.get(args.sessionId);
-          
-          if (session && session.user) {
-            return {
-              content: [
-                {
-                  type: 'text',
-                  text: JSON.stringify({
-                    authenticated: true,
-                    user: session.user,
-                    message: `Authenticated as ${session.user.name}`
-                  }, null, 2)
-                }
-              ]
-            };
-          } else {
-            return {
-              content: [
-                {
-                  type: 'text',
-                  text: JSON.stringify({
-                    authenticated: false,
-                    error: 'Not authenticated. Please sign in first.',
-                    sessionId: args.sessionId
-                  }, null, 2)
-                }
-              ]
-            };
-          }
-        }
-
-        case 'logout_user': {
-          if (args.sessionId && sessions.has(args.sessionId)) {
-            const userName = sessions.get(args.sessionId).user.name;
-            sessions.delete(args.sessionId);
-            
-            return {
-              content: [
-                {
-                  type: 'text',
-                  text: JSON.stringify({
-                    success: true,
-                    message: `${userName} has been signed out successfully.`
-                  }, null, 2)
-                }
-              ]
-            };
-          } else {
-            return {
-              content: [
-                {
-                  type: 'text',
-                  text: JSON.stringify({
-                    success: false,
-                    message: 'No active session found.'
-                  }, null, 2)
-                }
-              ]
-            };
-          }
-        }
-
-        default:
-          throw new Error(`Unknown tool: ${toolName}`);
+      if (request.params.name !== widget.id) {
+        throw new Error(`Unknown tool: ${request.params.name}`);
       }
+
+      const args = request.params.arguments || {};
+      const pizzaTopping = args.pizzaTopping || 'pepperoni';
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: widget.responseText
+          }
+        ],
+        structuredContent: {
+          pizzaTopping: pizzaTopping
+        },
+        _meta: widgetInvocationMeta(widget)
+      };
     }
   );
 
   return server;
 }
 
-/**
- * Express App Setup
- */
-const app = express();
-app.use(cors());
-app.use(express.json());
+// Session management
+const sessions = new Map();
 
-// Serve static files
-app.use(express.static('public'));
+const ssePath = '/mcp';
+const postPath = '/mcp/messages';
 
-// Root endpoint
-app.get('/', (req, res) => {
-  const baseUrl = process.env.BASE_URL || `http://localhost:${PORT}`;
-  res.json({
-    name: 'Target Customer Authentication MCP Server',
-    version: '1.0.0',
-    description: 'MCP server for Target customer authentication with UI components',
-    endpoints: {
-      mcp: `${baseUrl}/mcp`,
-      openapi: `${baseUrl}/openapi.json`,
-      privacy: `${baseUrl}/privacy`
-    },
-    capabilities: ['resources', 'tools', 'authentication']
-  });
-});
-
-// MCP SSE endpoint (GET /mcp)
-app.get('/mcp', async (req, res) => {
-  console.log('New SSE connection request');
-  
+// Handle SSE request
+async function handleSseRequest(res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'content-type');
-  
-  const server = createTargetAuthServer();
-  const transport = new SSEServerTransport('/mcp/messages', res);
+  const server = createPizzazServer();
+  const transport = new SSEServerTransport(postPath, res);
   const sessionId = transport.sessionId;
-  
-  mcpSessions.set(sessionId, { server, transport });
-  
+
+  sessions.set(sessionId, { server, transport });
+
   transport.onclose = async () => {
-    console.log(`SSE session ${sessionId} closed`);
-    mcpSessions.delete(sessionId);
+    sessions.delete(sessionId);
     await server.close();
   };
-  
+
   transport.onerror = (error) => {
     console.error('SSE transport error', error);
   };
-  
+
   try {
     await server.connect(transport);
-    console.log(`SSE session ${sessionId} connected`);
+    console.log(`✓ SSE session ${sessionId} connected`);
   } catch (error) {
+    sessions.delete(sessionId);
     console.error('Failed to start SSE session', error);
-    mcpSessions.delete(sessionId);
     if (!res.headersSent) {
-      res.status(500).end('Failed to establish SSE connection');
+      res.writeHead(500).end('Failed to establish SSE connection');
     }
   }
-});
+}
 
-// MCP message endpoint (POST /mcp/messages)
-app.post('/mcp/messages', async (req, res) => {
+// Handle POST message
+async function handlePostMessage(req, res, url) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'content-type');
-  
-  const sessionId = req.query.sessionId;
-  
+  const sessionId = url.searchParams.get('sessionId');
+
   if (!sessionId) {
-    return res.status(400).json({ error: 'Missing sessionId query parameter' });
+    res.writeHead(400).end('Missing sessionId query parameter');
+    return;
   }
-  
-  const session = mcpSessions.get(sessionId);
-  
+
+  const session = sessions.get(sessionId);
+
   if (!session) {
-    return res.status(404).json({ error: 'Unknown session' });
+    res.writeHead(404).end('Unknown session');
+    return;
   }
-  
+
   try {
     await session.transport.handlePostMessage(req, res);
   } catch (error) {
     console.error('Failed to process message', error);
     if (!res.headersSent) {
-      res.status(500).json({ error: 'Failed to process message' });
+      res.writeHead(500).end('Failed to process message');
     }
   }
-});
+}
 
-// OPTIONS handler for CORS
-app.options(['/mcp', '/mcp/messages'], (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'content-type');
-  res.status(204).end();
-});
+// Server setup
+const portEnv = Number(process.env.PORT ?? 8000);
+const port = Number.isFinite(portEnv) ? portEnv : 8000;
 
-// Authentication API endpoint (for the component to call)
-app.post('/api/auth/login', (req, res) => {
-  const { email, password, sessionId } = req.body;
-  
-  // Demo: Accept any email/password
-  sessions.set(sessionId, {
-    user: demoUser,
-    authenticatedAt: new Date().toISOString()
-  });
-  
-  res.json({
-    success: true,
-    user: demoUser,
-    sessionId: sessionId
-  });
-});
+const httpServer = createServer(
+  async (req, res) => {
+    if (!req.url) {
+      res.writeHead(400).end('Missing URL');
+      return;
+    }
 
-// OpenAPI schema for Custom GPT Actions
-app.get('/openapi.json', (req, res) => {
-  const baseUrl = process.env.BASE_URL || `http://localhost:${PORT}`;
-  
-  res.json({
-    openapi: '3.1.0',
-    info: {
-      title: 'Target Customer Authentication API',
-      version: '1.0.0',
-      description: 'API for Target customer authentication and profile management'
-    },
-    servers: [
-      {
-        url: baseUrl
-      }
-    ],
-    paths: {
-      '/api/auth/login': {
-        post: {
-          operationId: 'authenticateUser',
-          summary: 'Authenticate a Target customer',
-          description: 'Authenticate a customer with email and password',
-          requestBody: {
-            required: true,
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    email: {
-                      type: 'string',
-                      description: 'Customer email address'
-                    },
-                    password: {
-                      type: 'string',
-                      description: 'Customer password'
-                    },
-                    sessionId: {
-                      type: 'string',
-                      description: 'Session ID'
-                    }
-                  },
-                  required: ['email', 'password', 'sessionId']
-                }
-              }
-            }
-          },
-          responses: {
-            '200': {
-              description: 'Authentication successful',
-              content: {
-                'application/json': {
-                  schema: {
-                    type: 'object',
-                    properties: {
-                      success: { type: 'boolean' },
-                      user: { type: 'object' },
-                      sessionId: { type: 'string' }
-                    }
-                  }
-                }
-              }
-            }
-          }
+    const url = new URL(req.url, `http://${req.headers.host ?? 'localhost'}`);
+
+    // CORS preflight
+    if (
+      req.method === 'OPTIONS' &&
+      (url.pathname === ssePath || url.pathname === postPath)
+    ) {
+      res.writeHead(204, {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'content-type'
+      });
+      res.end();
+      return;
+    }
+
+    // Root endpoint
+    if (req.method === 'GET' && (url.pathname === '/' || url.pathname === '')) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        name: 'Pizzaz MCP Server',
+        version: '0.1.0',
+        description: 'Example MCP server from OpenAI Apps SDK',
+        endpoints: {
+          mcp: ssePath,
+          messages: postPath
         }
-      }
-    },
-    'x-privacy-policy-url': `${baseUrl}/privacy`
-  });
+      }));
+      return;
+    }
+
+    // SSE endpoint
+    if (req.method === 'GET' && url.pathname === ssePath) {
+      await handleSseRequest(res);
+      return;
+    }
+
+    // POST messages endpoint
+    if (req.method === 'POST' && url.pathname === postPath) {
+      await handlePostMessage(req, res, url);
+      return;
+    }
+
+    res.writeHead(404).end('Not Found');
+  }
+);
+
+httpServer.on('clientError', (err, socket) => {
+  console.error('HTTP client error', err);
+  socket.end('HTTP/1.1 400 Bad Request\r\n\r\n');
 });
 
-// Privacy policy
-app.get('/privacy', (req, res) => {
-  res.send(`
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Target Auth - Privacy Policy</title>
-      <style>
-        body {
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-          max-width: 800px;
-          margin: 0 auto;
-          padding: 40px 20px;
-          line-height: 1.6;
-          color: #333;
-        }
-        h1 { color: #cc0000; }
-        h2 { color: #444; margin-top: 30px; }
-        .notice { background: #fff3cd; padding: 15px; border-radius: 5px; margin: 20px 0; }
-      </style>
-    </head>
-    <body>
-      <h1>Privacy Policy</h1>
-      <p><strong>Last Updated:</strong> November 21, 2025</p>
-      
-      <div class="notice">
-        <strong>⚠️ Demo Application:</strong> This is a demonstration application. No real authentication is performed.
-      </div>
-      
-      <h2>Data Collection</h2>
-      <p>This demo application:</p>
-      <ul>
-        <li>Does not collect or store any real customer data</li>
-        <li>Accepts any email/password combination for demonstration purposes</li>
-        <li>Returns a demo profile for "Lauren Bailey" regardless of input</li>
-        <li>Stores session data in memory only (cleared on server restart)</li>
-      </ul>
-      
-      <h2>Data Storage</h2>
-      <p>All data is stored temporarily in server memory and is automatically deleted when:</p>
-      <ul>
-        <li>The session expires</li>
-        <li>The server restarts</li>
-        <li>You explicitly log out</li>
-      </ul>
-      
-      <h2>Third-Party Services</h2>
-      <p>This application integrates with:</p>
-      <ul>
-        <li><strong>ChatGPT:</strong> via the OpenAI Apps SDK and Model Context Protocol</li>
-        <li><strong>Heroku:</strong> for hosting the demo server</li>
-      </ul>
-      
-      <h2>Contact</h2>
-      <p>For questions about this privacy policy, please contact the application administrator.</p>
-    </body>
-    </html>
-  `);
-});
-
-// Start server
-app.listen(PORT, () => {
-  console.log(`\n🎯 Target Customer Authentication MCP Server`);
-  console.log(`📍 Running on: http://localhost:${PORT}`);
+httpServer.listen(port, () => {
+  console.log(`\n🍕 Pizzaz MCP Server`);
+  console.log(`📍 Running on: http://localhost:${port}`);
   console.log(`\nEndpoints:`);
-  console.log(`  🔌 MCP: http://localhost:${PORT}/mcp`);
-  console.log(`  📋 OpenAPI: http://localhost:${PORT}/openapi.json`);
-  console.log(`  🔒 Privacy: http://localhost:${PORT}/privacy`);
+  console.log(`  🔌 MCP: http://localhost:${port}${ssePath}`);
+  console.log(`  📨 Messages: http://localhost:${port}${postPath}`);
   console.log(`\nReady to connect to ChatGPT! 🚀\n`);
 });
+
