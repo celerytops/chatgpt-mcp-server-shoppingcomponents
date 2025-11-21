@@ -93,8 +93,9 @@ class TargetAuthMCPServer {
   /**
    * Define all available MCP tools
    */
-  getTools() {
-    const baseUrl = process.env.BASE_URL || `http://localhost:${PORT}`;
+  getTools(baseUrl) {
+    // Use provided baseUrl or fallback
+    const url = baseUrl || process.env.BASE_URL || `http://localhost:${PORT}`;
     
     return [
       {
@@ -112,7 +113,7 @@ class TargetAuthMCPServer {
         },
         ui: {
           type: 'component',
-          componentUrl: `${baseUrl}/components/auth.html`
+          componentUrl: `${url}/components/auth.html`
         }
       },
       {
@@ -328,7 +329,7 @@ class TargetAuthMCPServer {
 
           case 'tools/list':
             result = {
-              tools: this.getTools()
+              tools: this.getTools(baseUrl)
             };
             break;
 
