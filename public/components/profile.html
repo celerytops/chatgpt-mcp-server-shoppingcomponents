@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Profile</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      background: transparent;
+      color-scheme: light dark;
+      padding: 20px;
+    }
+
+    .profile-card {
+      max-width: 500px;
+      margin: 0 auto;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 20px;
+      padding: 32px;
+      color: white;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .avatar {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      margin: 0 auto 20px;
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+
+    .email {
+      text-align: center;
+      opacity: 0.9;
+      margin-bottom: 24px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 24px;
+      padding-top: 24px;
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      opacity: 0.8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    button {
+      flex: 1;
+      padding: 12px 20px;
+      border: 2px solid white;
+      background: transparent;
+      color: white;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    button:hover {
+      background: white;
+      color: #667eea;
+    }
+  </style>
+</head>
+<body>
+  <div class="profile-card">
+    <div class="avatar" id="avatar">👤</div>
+    <h1 id="userName">Loading...</h1>
+    <p class="email" id="userEmail">—</p>
+
+    <div class="stats">
+      <div class="stat">
+        <span class="stat-value">42</span>
+        <span class="stat-label">Tasks</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value">15</span>
+        <span class="stat-label">Projects</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value">8</span>
+        <span class="stat-label">Teams</span>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button onclick="editProfile()">Edit Profile</button>
+      <button onclick="viewSettings()">Settings</button>
+    </div>
+  </div>
+
+  <script>
+    const isInChatGPT = typeof window.openai !== 'undefined';
+
+    async function loadProfile() {
+      if (isInChatGPT && window.openai.toolOutput) {
+        const data = window.openai.toolOutput.data;
+        if (data && data.user) {
+          displayProfile(data.user);
+        }
+      } else {
+        // Demo data for standalone testing
+        displayProfile({
+          name: 'Demo User',
+          email: 'demo@example.com'
+        });
+      }
+    }
+
+    function displayProfile(user) {
+      document.getElementById('userName').textContent = user.name;
+      document.getElementById('userEmail').textContent = user.email;
+      
+      // Set avatar emoji based on first letter of name
+      const firstLetter = user.name[0].toUpperCase();
+      const emojis = ['👨', '👩', '🧑', '👤', '😊', '🎨', '🚀', '💼'];
+      document.getElementById('avatar').textContent = emojis[firstLetter.charCodeAt(0) % emojis.length];
+    }
+
+    function editProfile() {
+      if (isInChatGPT) {
+        window.openai.sendFollowUpMessage({
+          role: 'user',
+          content: 'I want to edit my profile'
+        });
+      } else {
+        alert('Edit profile clicked!');
+      }
+    }
+
+    function viewSettings() {
+      if (isInChatGPT) {
+        window.openai.sendFollowUpMessage({
+          role: 'user',
+          content: 'Show me my settings'
+        });
+      } else {
+        alert('Settings clicked!');
+      }
+    }
+
+    loadProfile();
+  </script>
+</body>
+</html>
+
