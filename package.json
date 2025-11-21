@@ -1,7 +1,7 @@
 {
   "name": "target-auth-component",
   "version": "1.0.0",
-  "description": "Target team member authentication component for ChatGPT",
+  "description": "Target customer authentication component for ChatGPT with MCP support",
   "type": "module",
   "main": "server.js",
   "scripts": {
@@ -13,6 +13,7 @@
     "npm": "10.x"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
     "express": "^4.18.2",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1"
