@@ -143,13 +143,13 @@ function createPizzazServer() {
       tools: [
         {
           name: widget.id,
-          description: widget.title,
+          description: 'Show a list of the best pizza places. If the user mentions a specific pizza topping (like pepperoni, mushrooms, or cheese), pass it as the pizzaTopping parameter.',
           inputSchema: {
             type: 'object',
             properties: {
               pizzaTopping: {
                 type: 'string',
-                description: 'Topping to mention when rendering the widget.'
+                description: 'The pizza topping the user wants to see (e.g., "pepperoni", "mushrooms", "cheese"). Extract this from the user\'s request.'
               }
             },
             required: ['pizzaTopping'],
