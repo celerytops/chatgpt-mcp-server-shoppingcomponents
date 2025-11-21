@@ -277,26 +277,22 @@
 
     async function initialize() {
       if (isInChatGPT) {
-        // Get initial data from ChatGPT
+        // Get initial data from ChatGPT via toolOutput
         const toolOutput = window.openai.toolOutput;
-        if (toolOutput && toolOutput.data) {
-          sessionId = toolOutput.data.sessionId;
-          if (toolOutput.data.message) {
-            document.getElementById('authMessage').textContent = toolOutput.data.message;
+        console.log('toolOutput:', toolOutput);
+        
+        if (toolOutput) {
+          // Access data directly from toolOutput (matches structuredContent from server)
+          sessionId = toolOutput.sessionId;
+          if (toolOutput.message) {
+            document.getElementById('authMessage').textContent = toolOutput.message;
           }
         }
 
-        // Check if user is already authenticated
-        if (sessionId) {
-          try {
-            const response = await fetch(`${serverUrl}/api/session/${sessionId}`);
-            const data = await response.json();
-            if (data.authenticated) {
-              showSuccess(data.user);
-            }
-          } catch (error) {
-            console.error('Session check failed:', error);
-          }
+        // Restore previous widget state if available
+        const widgetState = window.openai.widgetState;
+        if (widgetState && widgetState.authenticated) {
+          showSuccess(widgetState.user);
         }
       } else {
         // Running standalone - generate session for testing
@@ -320,7 +316,7 @@
       submitBtn.innerHTML = '<span class="loading"></span> Signing in...';
 
       try {
-        const response = await fetch(`${serverUrl}/api/authenticate`, {
+        const response = await fetch(`${serverUrl}/api/auth/login`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -337,11 +333,19 @@
         if (data.success) {
           showSuccess(data.user);
 
+          // Save widget state for re-rendering
+          if (isInChatGPT && window.openai.setWidgetState) {
+            await window.openai.setWidgetState({
+              authenticated: true,
+              user: data.user,
+              sessionId: sessionId
+            });
+          }
+
           // Notify ChatGPT of successful authentication
           if (isInChatGPT && window.openai.sendFollowUpMessage) {
-            window.openai.sendFollowUpMessage({
-              role: 'user',
-              content: `Successfully authenticated as ${data.user.name}`
+            await window.openai.sendFollowUpMessage({
+              prompt: `Successfully authenticated as ${data.user.name}. Session ID: ${sessionId}`
             });
           }
         } else {
