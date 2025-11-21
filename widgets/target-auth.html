@@ -15,68 +15,11 @@
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
       background: #f5f5f5;
       padding: 16px;
+      transition: background 0.2s;
     }
 
-    /* Dark mode support */
-    @media (prefers-color-scheme: dark) {
-      body {
-        background: #1a1a1a;
-      }
-
-      .container {
-        background: #2d2d2d;
-        border-color: rgba(255, 255, 255, 0.1);
-      }
-
-      h1 {
-        color: #e5e5e5;
-      }
-
-      .subtitle {
-        color: #a0a0a0;
-      }
-
-      label {
-        color: #e5e5e5;
-      }
-
-      input {
-        background: #3d3d3d;
-        border-color: #555;
-        color: #e5e5e5;
-      }
-
-      input:focus {
-        border-color: #ff4444;
-        background: #454545;
-      }
-
-      .help-text {
-        color: #a0a0a0;
-      }
-
-      .code-input {
-        background: #3d3d3d;
-        border-color: #555;
-        color: #e5e5e5;
-      }
-
-      .code-input:focus {
-        border-color: #ff4444;
-        background: #454545;
-      }
-
-      .confirmation-text {
-        color: #e5e5e5;
-      }
-
-      .confirmation-text p {
-        color: #a0a0a0;
-      }
-
-      .confirmation-text span:not(.user-email) {
-        color: #e5e5e5;
-      }
+    body.dark-mode {
+      background: #1a1a1a;
     }
 
     .container {
@@ -87,6 +30,13 @@
       padding: 32px;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
       border: 1px solid rgba(0, 0, 0, 0.1);
+      transition: all 0.2s;
+    }
+
+    body.dark-mode .container {
+      background: #2d2d2d;
+      border-color: rgba(255, 255, 255, 0.1);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     }
 
     .header {
@@ -130,11 +80,21 @@
       font-weight: 600;
       color: #333;
       margin-bottom: 8px;
+      transition: color 0.2s;
+    }
+
+    body.dark-mode h1 {
+      color: #f0f0f0;
     }
 
     .subtitle {
       color: #666;
       font-size: 14px;
+      transition: color 0.2s;
+    }
+
+    body.dark-mode .subtitle {
+      color: #a0a0a0;
     }
 
     .form-group {
@@ -147,6 +107,11 @@
       font-weight: 500;
       font-size: 14px;
       color: #333;
+      transition: color 0.2s;
+    }
+
+    body.dark-mode label {
+      color: #e0e0e0;
     }
 
     input {
@@ -156,12 +121,24 @@
       border-radius: 6px;
       font-size: 14px;
       transition: all 0.2s;
+      background: white;
+      color: #333;
+    }
+
+    body.dark-mode input {
+      background: #1a1a1a;
+      border-color: #444;
+      color: #f0f0f0;
     }
 
     input:focus {
       outline: none;
       border-color: #cc0000;
       box-shadow: 0 0 0 3px rgba(204, 0, 0, 0.1);
+    }
+
+    body.dark-mode input:focus {
+      box-shadow: 0 0 0 3px rgba(204, 0, 0, 0.2);
     }
 
     .code-inputs {
@@ -179,11 +156,24 @@
       font-weight: 600;
       border: 2px solid #ddd;
       border-radius: 8px;
+      background: white;
+      color: #333;
+      transition: all 0.2s;
+    }
+
+    body.dark-mode .code-input {
+      background: #1a1a1a;
+      border-color: #444;
+      color: #f0f0f0;
     }
 
     .code-input:focus {
       border-color: #cc0000;
       box-shadow: 0 0 0 3px rgba(204, 0, 0, 0.1);
+    }
+
+    body.dark-mode .code-input:focus {
+      box-shadow: 0 0 0 3px rgba(204, 0, 0, 0.2);
     }
 
     .btn-primary {
@@ -260,6 +250,11 @@
       font-size: 13px;
       color: #666;
       margin-top: 16px;
+      transition: color 0.2s;
+    }
+
+    body.dark-mode .help-text {
+      color: #a0a0a0;
     }
   </style>
 </head>
@@ -280,7 +275,6 @@
             type="email"
             id="email"
             placeholder="you@example.com"
-            value="lauren.bailey@email.com"
             required
             autocomplete="email"
           />
@@ -292,7 +286,6 @@
             type="password"
             id="password"
             placeholder="Enter your password"
-            value="password123"
             required
             autocomplete="current-password"
           />
@@ -350,113 +343,111 @@
   </div>
 
   <script>
-    (function() {
-      try {
-        console.log('Target Auth Widget loaded');
-        
-        // Get data from window.openai
-        const toolOutput = window.openai?.toolOutput || {};
-        const sessionId = toolOutput.sessionId || 'demo_' + Date.now();
-        
-        console.log('toolOutput:', toolOutput);
-        console.log('sessionId:', sessionId);
-        console.log('window.openai available:', !!window.openai);
-        
-        let userEmail = '';
-        
-        // Screen 1: Login Form
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
-          e.preventDefault();
-          
-          const email = document.getElementById('email').value;
-          const password = document.getElementById('password').value;
-          const loginBtn = document.getElementById('loginBtn');
-          
-          userEmail = email;
-          
-          // Show loading
-          loginBtn.disabled = true;
-          loginBtn.innerHTML = '<span class="loading"></span>Signing in...';
-          
-          // Simulate API call
-          await new Promise(resolve => setTimeout(resolve, 800));
-          
-          // Move to verification screen
-          document.getElementById('screen-login').classList.add('hidden');
-          document.getElementById('screen-verify').classList.remove('hidden');
-          
-          // Focus first code input
-          document.querySelector('.code-input[data-index="0"]').focus();
-        });
-        
-        // Screen 2: Verification Code
-        const codeInputs = document.querySelectorAll('.code-input');
-        
-        // Auto-advance to next input
-        codeInputs.forEach((input, index) => {
-          input.addEventListener('input', (e) => {
-            if (e.target.value.length === 1 && index < codeInputs.length - 1) {
-              codeInputs[index + 1].focus();
-            }
-          });
-          
-          input.addEventListener('keydown', (e) => {
-            if (e.key === 'Backspace' && !e.target.value && index > 0) {
-              codeInputs[index - 1].focus();
-            }
-          });
-        });
-        
-        document.getElementById('verifyForm').addEventListener('submit', async (e) => {
-          e.preventDefault();
-          
-          const code = Array.from(codeInputs).map(input => input.value).join('');
-          const verifyBtn = document.getElementById('verifyBtn');
-          
-          if (code.length !== 6) {
-            alert('Please enter all 6 digits');
-            return;
-          }
-          
-          // Show loading
-          verifyBtn.disabled = true;
-          verifyBtn.innerHTML = '<span class="loading"></span>Verifying...';
-          
-          // Simulate API call
-          await new Promise(resolve => setTimeout(resolve, 800));
-          
-          // Move to success screen
-          document.getElementById('screen-verify').classList.add('hidden');
-          document.getElementById('screen-success').classList.remove('hidden');
-          document.getElementById('userEmail').textContent = userEmail;
-          
-          // Save widget state
-          if (window.openai?.setWidgetState) {
-            await window.openai.setWidgetState({
-              authenticated: true,
-              email: userEmail,
-              name: 'Lauren Bailey',
-              sessionId: sessionId
-            });
-            console.log('Widget state saved');
-          }
-          
-          // Notify ChatGPT that authentication is complete
-          if (window.openai?.sendFollowUpMessage) {
-            await window.openai.sendFollowUpMessage({
-              prompt: `Authentication complete. I am now signed in as Lauren Bailey with email ${userEmail}. You can address me by name and help me with my Target account.`
-            });
-            console.log('Follow-up message sent');
-          }
-        });
+    console.log('Target Auth Widget loaded');
     
-        console.log('Target Auth Widget ready');
-      } catch (error) {
-        console.error('Widget error:', error);
-        // Display error to user
-        document.body.innerHTML = '<div style="padding: 20px; text-align: center;"><h2>Oops!</h2><p>Something went wrong loading the widget.</p><p style="color: #666; font-size: 14px;">' + error.message + '</p></div>';
+    // Get data from window.openai
+    const toolOutput = window.openai?.toolOutput || {};
+    const sessionId = toolOutput.sessionId || 'demo_' + Date.now();
+    
+    // Apply theme (dark/light mode)
+    const theme = window.openai?.theme || 'light';
+    if (theme === 'dark') {
+      document.body.classList.add('dark-mode');
+    }
+    
+    console.log('toolOutput:', toolOutput);
+    console.log('sessionId:', sessionId);
+    console.log('theme:', theme);
+    
+    let userEmail = '';
+    
+    // Screen 1: Login Form
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const loginBtn = document.getElementById('loginBtn');
+      
+      userEmail = email;
+      
+      // Show loading
+      loginBtn.disabled = true;
+      loginBtn.innerHTML = '<span class="loading"></span>Signing in...';
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // Move to verification screen
+      document.getElementById('screen-login').classList.add('hidden');
+      document.getElementById('screen-verify').classList.remove('hidden');
+      
+      // Focus first code input
+      document.querySelector('.code-input[data-index="0"]').focus();
+    });
+    
+    // Screen 2: Verification Code
+    const codeInputs = document.querySelectorAll('.code-input');
+    
+    // Auto-advance to next input
+    codeInputs.forEach((input, index) => {
+      input.addEventListener('input', (e) => {
+        if (e.target.value.length === 1 && index < codeInputs.length - 1) {
+          codeInputs[index + 1].focus();
+        }
+      });
+      
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && !e.target.value && index > 0) {
+          codeInputs[index - 1].focus();
+        }
+      });
+    });
+    
+    document.getElementById('verifyForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const code = Array.from(codeInputs).map(input => input.value).join('');
+      const verifyBtn = document.getElementById('verifyBtn');
+      
+      if (code.length !== 6) {
+        alert('Please enter all 6 digits');
+        return;
       }
-    })();
+      
+      // Show loading
+      verifyBtn.disabled = true;
+      verifyBtn.innerHTML = '<span class="loading"></span>Verifying...';
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // Move to success screen
+      document.getElementById('screen-verify').classList.add('hidden');
+      document.getElementById('screen-success').classList.remove('hidden');
+      document.getElementById('userEmail').textContent = userEmail;
+      
+      // Save widget state
+      if (window.openai?.setWidgetState) {
+        await window.openai.setWidgetState({
+          authenticated: true,
+          email: userEmail,
+          name: 'Lauren Bailey',
+          sessionId: sessionId
+        });
+        console.log('Widget state saved');
+      }
+      
+      // Notify ChatGPT
+      if (window.openai?.sendFollowUpMessage) {
+        await window.openai.sendFollowUpMessage({
+          prompt: `Successfully authenticated as Lauren Bailey (${userEmail}). Session ID: ${sessionId}`
+        });
+        console.log('Follow-up message sent');
+      }
+    });
+    
+    console.log('Target Auth Widget ready');
   </script>
 </body>
 </html>

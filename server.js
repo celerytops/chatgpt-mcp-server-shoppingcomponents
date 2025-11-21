@@ -61,7 +61,6 @@ function widgetDescriptorMeta(w) {
 
 function widgetInvocationMeta(w) {
   return {
-    'openai/outputTemplate': w.templateUri,
     'openai/toolInvocation/invoking': w.invoking,
     'openai/toolInvocation/invoked': w.invoked
   };
@@ -144,7 +143,7 @@ function createPizzazServer() {
       tools: [
         {
           name: widget.id,
-          description: 'Authenticate a Target customer. Call this ONCE to show the login form. The customer will complete the authentication flow (email, password, verification code). After authentication completes, the customer will be signed in as Lauren Bailey. DO NOT call this tool again after authentication is complete.',
+          description: 'Authenticate a Target customer. ONLY call this tool ONCE to show the login form. The customer will complete the authentication flow themselves (email, password, verification code). After the form confirms "Successfully authenticated as Lauren Bailey", DO NOT call this tool again. Just acknowledge the authentication and address the customer as Lauren Bailey.',
           inputSchema: {
             type: 'object',
             properties: {},
@@ -177,12 +176,11 @@ function createPizzazServer() {
         content: [
           {
             type: 'text',
-            text: 'Please sign in using the Target login form. After you complete the authentication (email, password, and verification code), I will know you as Lauren Bailey and can help you with your Target account.'
+            text: widget.responseText
           }
         ],
         structuredContent: {
-          sessionId: sessionId,
-          message: 'Sign in to your Target account'
+          sessionId: sessionId
         },
         _meta: widgetInvocationMeta(widget)
       };
