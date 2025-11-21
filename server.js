@@ -207,7 +207,8 @@ async function handleSseRequest(res) {
 
   transport.onclose = async () => {
     sessions.delete(sessionId);
-    await server.close();
+    // NOTE: Do NOT call server.close() here - it creates circular reference:
+    // transport.onclose -> server.close() -> transport.close() -> transport.onclose -> ...
   };
 
   transport.onerror = (error) => {
