@@ -143,10 +143,16 @@ function createPizzazServer() {
       tools: [
         {
           name: widget.id,
-          description: 'Authenticate a Target customer. ONLY call this tool ONCE to show the login form. The customer will complete the authentication flow themselves (email, password, verification code). After the form confirms "Successfully authenticated as Lauren Bailey", DO NOT call this tool again. Just acknowledge the authentication and address the customer as Lauren Bailey.',
+          description: 'Authenticate a Target customer. Call with authenticated=false to show login form. After user completes authentication, call with authenticated=true to show confirmation.',
           inputSchema: {
             type: 'object',
-            properties: {},
+            properties: {
+              authenticated: {
+                type: 'boolean',
+                description: 'Whether the customer is already authenticated. Use false for initial login, true for showing confirmation after authentication.',
+                default: false
+              }
+            },
             additionalProperties: false
           },
           title: widget.title,
@@ -169,6 +175,10 @@ function createPizzazServer() {
         throw new Error(`Unknown tool: ${request.params.name}`);
       }
 
+      // Get authenticated status from arguments (default to false)
+      const args = request.params.arguments || {};
+      const authenticated = args.authenticated === true;
+
       // Generate a session ID for this authentication
       const sessionId = 'sess_' + Math.random().toString(36).substring(2, 15);
 
@@ -176,11 +186,14 @@ function createPizzazServer() {
         content: [
           {
             type: 'text',
-            text: widget.responseText
+            text: authenticated 
+              ? 'Authentication confirmed. Lauren Bailey is signed in.'
+              : widget.responseText
           }
         ],
         structuredContent: {
-          sessionId: sessionId
+          sessionId: sessionId,
+          authenticated: authenticated
         },
         _meta: widgetInvocationMeta(widget)
       };

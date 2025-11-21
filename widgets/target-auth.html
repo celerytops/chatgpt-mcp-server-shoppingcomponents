@@ -337,6 +337,25 @@
         </div>
       </div>
     </div>
+
+    <!-- Screen 4: Already Authenticated (shown on second call) -->
+    <div id="screen-already-auth" class="hidden">
+      <div style="text-align: center;">
+        <div class="success-icon">✓</div>
+        <h1 style="margin-bottom: 8px;">Authentication Verified</h1>
+        <p class="subtitle">You're already signed in</p>
+        
+        <div class="confirmation-text">
+          <p style="margin: 16px 0;">
+            Authenticated as<br>
+            <span style="font-size: 18px; font-weight: 600; color: white;">Lauren Bailey</span>
+          </p>
+          <p style="font-size: 14px; color: #999;">
+            Session active
+          </p>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -345,6 +364,7 @@
     // Get data from window.openai
     const toolOutput = window.openai?.toolOutput || {};
     const sessionId = toolOutput.sessionId || 'demo_' + Date.now();
+    const authenticated = toolOutput.authenticated === true;
     
     // Apply theme (dark/light mode)
     const theme = window.openai?.theme || 'light';
@@ -354,7 +374,17 @@
     
     console.log('toolOutput:', toolOutput);
     console.log('sessionId:', sessionId);
+    console.log('authenticated:', authenticated);
     console.log('theme:', theme);
+    
+    // Check if already authenticated
+    if (authenticated) {
+      // Show "already authenticated" confirmation screen
+      document.getElementById('screen-login').classList.add('hidden');
+      document.getElementById('screen-already-auth').classList.remove('hidden');
+      console.log('Showing already-authenticated screen');
+      // No further interaction needed - just showing confirmation
+    }
     
     let userEmail = '';
     
