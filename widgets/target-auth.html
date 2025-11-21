@@ -280,6 +280,7 @@
             type="email"
             id="email"
             placeholder="you@example.com"
+            value="lauren.bailey@email.com"
             required
             autocomplete="email"
           />
@@ -291,6 +292,7 @@
             type="password"
             id="password"
             placeholder="Enter your password"
+            value="password123"
             required
             autocomplete="current-password"
           />
@@ -348,104 +350,113 @@
   </div>
 
   <script>
-    console.log('Target Auth Widget loaded');
-    
-    // Get data from window.openai
-    const toolOutput = window.openai?.toolOutput || {};
-    const sessionId = toolOutput.sessionId || 'demo_' + Date.now();
-    
-    console.log('toolOutput:', toolOutput);
-    console.log('sessionId:', sessionId);
-    
-    let userEmail = '';
-    
-    // Screen 1: Login Form
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-      const loginBtn = document.getElementById('loginBtn');
-      
-      userEmail = email;
-      
-      // Show loading
-      loginBtn.disabled = true;
-      loginBtn.innerHTML = '<span class="loading"></span>Signing in...';
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // Move to verification screen
-      document.getElementById('screen-login').classList.add('hidden');
-      document.getElementById('screen-verify').classList.remove('hidden');
-      
-      // Focus first code input
-      document.querySelector('.code-input[data-index="0"]').focus();
-    });
-    
-    // Screen 2: Verification Code
-    const codeInputs = document.querySelectorAll('.code-input');
-    
-    // Auto-advance to next input
-    codeInputs.forEach((input, index) => {
-      input.addEventListener('input', (e) => {
-        if (e.target.value.length === 1 && index < codeInputs.length - 1) {
-          codeInputs[index + 1].focus();
-        }
-      });
-      
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'Backspace' && !e.target.value && index > 0) {
-          codeInputs[index - 1].focus();
-        }
-      });
-    });
-    
-    document.getElementById('verifyForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      const code = Array.from(codeInputs).map(input => input.value).join('');
-      const verifyBtn = document.getElementById('verifyBtn');
-      
-      if (code.length !== 6) {
-        alert('Please enter all 6 digits');
-        return;
-      }
-      
-      // Show loading
-      verifyBtn.disabled = true;
-      verifyBtn.innerHTML = '<span class="loading"></span>Verifying...';
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // Move to success screen
-      document.getElementById('screen-verify').classList.add('hidden');
-      document.getElementById('screen-success').classList.remove('hidden');
-      document.getElementById('userEmail').textContent = userEmail;
-      
-      // Save widget state
-      if (window.openai?.setWidgetState) {
-        await window.openai.setWidgetState({
-          authenticated: true,
-          email: userEmail,
-          name: 'Lauren Bailey',
-          sessionId: sessionId
+    (function() {
+      try {
+        console.log('Target Auth Widget loaded');
+        
+        // Get data from window.openai
+        const toolOutput = window.openai?.toolOutput || {};
+        const sessionId = toolOutput.sessionId || 'demo_' + Date.now();
+        
+        console.log('toolOutput:', toolOutput);
+        console.log('sessionId:', sessionId);
+        console.log('window.openai available:', !!window.openai);
+        
+        let userEmail = '';
+        
+        // Screen 1: Login Form
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          
+          const email = document.getElementById('email').value;
+          const password = document.getElementById('password').value;
+          const loginBtn = document.getElementById('loginBtn');
+          
+          userEmail = email;
+          
+          // Show loading
+          loginBtn.disabled = true;
+          loginBtn.innerHTML = '<span class="loading"></span>Signing in...';
+          
+          // Simulate API call
+          await new Promise(resolve => setTimeout(resolve, 800));
+          
+          // Move to verification screen
+          document.getElementById('screen-login').classList.add('hidden');
+          document.getElementById('screen-verify').classList.remove('hidden');
+          
+          // Focus first code input
+          document.querySelector('.code-input[data-index="0"]').focus();
         });
-        console.log('Widget state saved');
-      }
-      
-      // Notify ChatGPT that authentication is complete
-      if (window.openai?.sendFollowUpMessage) {
-        await window.openai.sendFollowUpMessage({
-          prompt: `Authentication complete. I am now signed in as Lauren Bailey with email ${userEmail}. You can address me by name and help me with my Target account.`
+        
+        // Screen 2: Verification Code
+        const codeInputs = document.querySelectorAll('.code-input');
+        
+        // Auto-advance to next input
+        codeInputs.forEach((input, index) => {
+          input.addEventListener('input', (e) => {
+            if (e.target.value.length === 1 && index < codeInputs.length - 1) {
+              codeInputs[index + 1].focus();
+            }
+          });
+          
+          input.addEventListener('keydown', (e) => {
+            if (e.key === 'Backspace' && !e.target.value && index > 0) {
+              codeInputs[index - 1].focus();
+            }
+          });
         });
-        console.log('Follow-up message sent');
-      }
-    });
+        
+        document.getElementById('verifyForm').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          
+          const code = Array.from(codeInputs).map(input => input.value).join('');
+          const verifyBtn = document.getElementById('verifyBtn');
+          
+          if (code.length !== 6) {
+            alert('Please enter all 6 digits');
+            return;
+          }
+          
+          // Show loading
+          verifyBtn.disabled = true;
+          verifyBtn.innerHTML = '<span class="loading"></span>Verifying...';
+          
+          // Simulate API call
+          await new Promise(resolve => setTimeout(resolve, 800));
+          
+          // Move to success screen
+          document.getElementById('screen-verify').classList.add('hidden');
+          document.getElementById('screen-success').classList.remove('hidden');
+          document.getElementById('userEmail').textContent = userEmail;
+          
+          // Save widget state
+          if (window.openai?.setWidgetState) {
+            await window.openai.setWidgetState({
+              authenticated: true,
+              email: userEmail,
+              name: 'Lauren Bailey',
+              sessionId: sessionId
+            });
+            console.log('Widget state saved');
+          }
+          
+          // Notify ChatGPT that authentication is complete
+          if (window.openai?.sendFollowUpMessage) {
+            await window.openai.sendFollowUpMessage({
+              prompt: `Authentication complete. I am now signed in as Lauren Bailey with email ${userEmail}. You can address me by name and help me with my Target account.`
+            });
+            console.log('Follow-up message sent');
+          }
+        });
     
-    console.log('Target Auth Widget ready');
+        console.log('Target Auth Widget ready');
+      } catch (error) {
+        console.error('Widget error:', error);
+        // Display error to user
+        document.body.innerHTML = '<div style="padding: 20px; text-align: center;"><h2>Oops!</h2><p>Something went wrong loading the widget.</p><p style="color: #666; font-size: 14px;">' + error.message + '</p></div>';
+      }
+    })();
   </script>
 </body>
 </html>

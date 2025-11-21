@@ -177,12 +177,12 @@ function createPizzazServer() {
         content: [
           {
             type: 'text',
-            text: 'Authentication form displayed. The customer will complete the sign-in process (email, password, and verification code). Once complete, they will be authenticated as Lauren Bailey.'
+            text: 'Please sign in using the Target login form. After you complete the authentication (email, password, and verification code), I will know you as Lauren Bailey and can help you with your Target account.'
           }
         ],
         structuredContent: {
           sessionId: sessionId,
-          instructionsForAssistant: 'Wait for the user to complete authentication. They will send a follow-up message when done. Do not call this tool again.'
+          message: 'Sign in to your Target account'
         },
         _meta: widgetInvocationMeta(widget)
       };
