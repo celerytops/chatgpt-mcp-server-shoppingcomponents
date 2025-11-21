@@ -143,7 +143,7 @@ function createPizzazServer() {
       tools: [
         {
           name: widget.id,
-          description: 'Authenticate a Target customer. Shows a Target-branded login form where the customer can sign in with their email and password, then verify with a code.',
+          description: 'Authenticate a Target customer. Call this ONCE to show the login form. The customer will complete the authentication flow (email, password, verification code). After authentication completes, the customer will be signed in as Lauren Bailey. DO NOT call this tool again after authentication is complete.',
           inputSchema: {
             type: 'object',
             properties: {},
@@ -176,11 +176,12 @@ function createPizzazServer() {
         content: [
           {
             type: 'text',
-            text: widget.responseText
+            text: 'Authentication form displayed. The customer will complete the sign-in process (email, password, and verification code). Once complete, they will be authenticated as Lauren Bailey.'
           }
         ],
         structuredContent: {
-          sessionId: sessionId
+          sessionId: sessionId,
+          instructionsForAssistant: 'Wait for the user to complete authentication. They will send a follow-up message when done. Do not call this tool again.'
         },
         _meta: widgetInvocationMeta(widget)
       };

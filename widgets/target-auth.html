@@ -17,6 +17,68 @@
       padding: 16px;
     }
 
+    /* Dark mode support */
+    @media (prefers-color-scheme: dark) {
+      body {
+        background: #1a1a1a;
+      }
+
+      .container {
+        background: #2d2d2d;
+        border-color: rgba(255, 255, 255, 0.1);
+      }
+
+      h1 {
+        color: #e5e5e5;
+      }
+
+      .subtitle {
+        color: #a0a0a0;
+      }
+
+      label {
+        color: #e5e5e5;
+      }
+
+      input {
+        background: #3d3d3d;
+        border-color: #555;
+        color: #e5e5e5;
+      }
+
+      input:focus {
+        border-color: #ff4444;
+        background: #454545;
+      }
+
+      .help-text {
+        color: #a0a0a0;
+      }
+
+      .code-input {
+        background: #3d3d3d;
+        border-color: #555;
+        color: #e5e5e5;
+      }
+
+      .code-input:focus {
+        border-color: #ff4444;
+        background: #454545;
+      }
+
+      .confirmation-text {
+        color: #e5e5e5;
+      }
+
+      .confirmation-text p {
+        color: #a0a0a0;
+      }
+
+      .confirmation-text span:not(.user-email) {
+        color: #e5e5e5;
+      }
+    }
+
     .container {
       max-width: 420px;
       margin: 0 auto;
@@ -374,10 +436,10 @@
         console.log('Widget state saved');
       }
       
-      // Notify ChatGPT
+      // Notify ChatGPT that authentication is complete
       if (window.openai?.sendFollowUpMessage) {
         await window.openai.sendFollowUpMessage({
-          prompt: `Successfully authenticated as Lauren Bailey (${userEmail}). Session ID: ${sessionId}`
+          prompt: `Authentication complete. I am now signed in as Lauren Bailey with email ${userEmail}. You can address me by name and help me with my Target account.`
         });
         console.log('Follow-up message sent');
       }
