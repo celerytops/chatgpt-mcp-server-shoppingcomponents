@@ -28,6 +28,22 @@ function getBaseUrl(req) {
   return `${protocol}://${host}`;
 }
 
+// Root endpoint - redirect to MCP metadata
+app.get('/', (req, res) => {
+  const baseUrl = getBaseUrl(req);
+  res.json({
+    name: "Target Customer Authentication",
+    version: "1.0.0",
+    description: "MCP server for Target customer authentication",
+    endpoints: {
+      mcp_metadata: `${baseUrl}/.well-known/mcp.json`,
+      openapi_schema: `${baseUrl}/openapi.json`,
+      privacy_policy: `${baseUrl}/privacy`,
+      auth_component: `${baseUrl}/components/auth.html`
+    }
+  });
+});
+
 // MCP metadata helper
 function getMCPMetadata() {
   return {
@@ -54,9 +70,10 @@ app.get('/mcp', (req, res) => {
   res.json(getMCPMetadata());
 });
 
-// MCP Tools Definition helper
-function getMCPTools(baseUrl) {
-  return {
+// MCP Tools Definition
+app.post('/mcp/tools/list', (req, res) => {
+  const baseUrl = getBaseUrl(req);
+  res.json({
     tools: [
       {
         name: "authenticate_user",
@@ -92,25 +109,7 @@ function getMCPTools(baseUrl) {
         }
       }
     ]
-  };
-}
-
-// MCP Tools Definition (standard endpoint)
-app.post('/mcp/tools/list', (req, res) => {
-  const baseUrl = getBaseUrl(req);
-  res.json(getMCPTools(baseUrl));
-});
-
-// MCP Tools Definition (alternative endpoint)
-app.post('/mcp', (req, res) => {
-  const baseUrl = getBaseUrl(req);
-  const { method } = req.body;
-  
-  if (method === 'tools/list') {
-    res.json(getMCPTools(baseUrl));
-  } else {
-    res.status(404).json({ error: "Unknown method" });
-  }
+  });
 });
 
 // MCP Tool Execution
