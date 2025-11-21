@@ -227,6 +227,107 @@ async function handleSseRequest(res) {
   }
 }
 
+// Handle stateless JSON-RPC POST
+async function handleStatelessJsonRpc(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Headers', 'content-type');
+  res.setHeader('Content-Type', 'application/json');
+
+  let body = '';
+  req.on('data', chunk => {
+    body += chunk.toString();
+  });
+
+  req.on('end', async () => {
+    try {
+      const jsonrpcRequest = JSON.parse(body);
+      const server = createPizzazServer();
+      
+      // Handle the request based on method
+      let result;
+      
+      switch (jsonrpcRequest.method) {
+        case 'initialize':
+          result = {
+            protocolVersion: '2024-11-05',
+            capabilities: {
+              resources: {},
+              tools: {}
+            },
+            serverInfo: {
+              name: 'target-auth',
+              version: '1.0.0'
+            }
+          };
+          break;
+          
+        case 'tools/list':
+          const toolsResult = await server._requestHandlers.get('tools/list')({
+            method: 'tools/list',
+            params: jsonrpcRequest.params || {}
+          });
+          result = toolsResult;
+          break;
+          
+        case 'tools/call':
+          const callResult = await server._requestHandlers.get('tools/call')({
+            method: 'tools/call',
+            params: jsonrpcRequest.params || {}
+          });
+          result = callResult;
+          break;
+          
+        case 'resources/list':
+          const resourcesResult = await server._requestHandlers.get('resources/list')({
+            method: 'resources/list',
+            params: jsonrpcRequest.params || {}
+          });
+          result = resourcesResult;
+          break;
+          
+        case 'resources/read':
+          const readResult = await server._requestHandlers.get('resources/read')({
+            method: 'resources/read',
+            params: jsonrpcRequest.params || {}
+          });
+          result = readResult;
+          break;
+          
+        default:
+          res.writeHead(200);
+          res.end(JSON.stringify({
+            jsonrpc: '2.0',
+            id: jsonrpcRequest.id,
+            error: {
+              code: -32601,
+              message: `Method not found: ${jsonrpcRequest.method}`
+            }
+          }));
+          return;
+      }
+      
+      res.writeHead(200);
+      res.end(JSON.stringify({
+        jsonrpc: '2.0',
+        id: jsonrpcRequest.id,
+        result: result
+      }));
+      
+    } catch (error) {
+      console.error('Stateless JSON-RPC error:', error);
+      res.writeHead(200);
+      res.end(JSON.stringify({
+        jsonrpc: '2.0',
+        id: null,
+        error: {
+          code: -32603,
+          message: error.message
+        }
+      }));
+    }
+  });
+}
+
 // Handle POST message
 async function handlePostMessage(req, res, url) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -300,6 +401,12 @@ const httpServer = createServer(
     // SSE endpoint
     if (req.method === 'GET' && url.pathname === ssePath) {
       await handleSseRequest(res);
+      return;
+    }
+
+    // Stateless JSON-RPC endpoint (POST to /mcp directly)
+    if (req.method === 'POST' && url.pathname === ssePath) {
+      await handleStatelessJsonRpc(req, res);
       return;
     }
 
