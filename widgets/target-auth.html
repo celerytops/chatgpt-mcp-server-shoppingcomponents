@@ -389,11 +389,20 @@
 
   <script>
     console.log('Target Auth Widget loaded');
+    console.log('window.openai:', window.openai);
     
     // Get data from window.openai
     const toolOutput = window.openai?.toolOutput || {};
-    const sessionId = toolOutput.sessionId || 'fallback_' + Date.now();
+    console.log('RAW toolOutput:', JSON.stringify(toolOutput));
+    
+    const sessionId = toolOutput.sessionId;
     const authenticated = toolOutput.authenticated === true;
+    
+    if (!sessionId) {
+      console.error('⚠️ WARNING: No sessionId in toolOutput!');
+      console.error('This means the server didn\'t pass structuredContent properly');
+      console.error('Full window.openai:', window.openai);
+    }
     
     // Apply theme (dark/light mode)
     const theme = window.openai?.theme || 'light';
@@ -419,7 +428,13 @@
     
     // Helper function to mark session as authenticated on server
     async function markSessionAuthenticated(email, name) {
+      if (!sessionId) {
+        console.error('Cannot mark session - no sessionId available!');
+        return;
+      }
+      
       try {
+        console.log(`Marking session ${sessionId} as authenticated...`);
         const response = await fetch('https://chatgpt-components-0d9232341440.herokuapp.com/api/session/authenticate', {
           method: 'POST',
           headers: {
