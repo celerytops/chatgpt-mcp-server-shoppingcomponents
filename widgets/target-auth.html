@@ -391,52 +391,79 @@
     console.log('Target Auth Widget loaded');
     console.log('window.openai:', window.openai);
     
-    // Get data from window.openai
-    const toolOutput = window.openai?.toolOutput || {};
-    console.log('RAW toolOutput:', JSON.stringify(toolOutput));
+    // Poll for sessionId if not immediately available
+    let sessionId = null;
+    let authenticated = false;
+    let pollAttempts = 0;
+    const maxPollAttempts = 20; // 20 attempts * 250ms = 5 seconds max
     
-    const sessionId = toolOutput.sessionId;
-    const authenticated = toolOutput.authenticated === true;
-    
-    if (!sessionId) {
-      console.error('⚠️ ERROR: No sessionId in toolOutput!');
-      console.error('create-target-session must be called before authenticate-target');
-      console.error('Full window.openai:', window.openai);
+    function checkForSessionId() {
+      const toolOutput = window.openai?.toolOutput || {};
+      console.log(`[Poll attempt ${pollAttempts + 1}] toolOutput:`, JSON.stringify(toolOutput));
       
-      // Show error in UI
-      document.querySelector('.container').innerHTML = `
-        <div style="text-align: center; padding: 32px;">
-          <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
-          <h1 style="color: #cc0000; margin-bottom: 16px; font-size: 20px;">Session Error</h1>
-          <p style="color: #666; line-height: 1.5;">
-            No session ID provided.<br>
-            <code style="background: #f5f5f5; padding: 2px 6px; border-radius: 3px; font-size: 12px;">create-target-session</code> 
-            must be called before 
-            <code style="background: #f5f5f5; padding: 2px 6px; border-radius: 3px; font-size: 12px;">authenticate-target</code>
-          </p>
-        </div>
-      `;
-      throw new Error('No sessionId - create-target-session must be called first');
+      if (toolOutput.sessionId) {
+        sessionId = toolOutput.sessionId;
+        authenticated = toolOutput.authenticated === true;
+        console.log('✓ SessionId received:', sessionId);
+        console.log('  Authenticated:', authenticated);
+        
+        // Initialize the widget now that we have sessionId
+        initializeWidget();
+        return true;
+      }
+      
+      return false;
     }
     
-    // Apply theme (dark/light mode)
-    const theme = window.openai?.theme || 'light';
-    if (theme === 'dark') {
-      document.body.classList.add('dark-mode');
+    function pollForSessionId() {
+      if (checkForSessionId()) {
+        return; // Got it!
+      }
+      
+      pollAttempts++;
+      
+      if (pollAttempts >= maxPollAttempts) {
+        console.error('⚠️ ERROR: No sessionId after polling');
+        console.error('create-target-session must be called before authenticate-target');
+        
+        // Show error in UI
+        document.querySelector('.container').innerHTML = `
+          <div style="text-align: center; padding: 32px;">
+            <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
+            <h1 style="color: #cc0000; margin-bottom: 16px; font-size: 20px;">Session Error</h1>
+            <p style="color: #666; line-height: 1.5;">
+              No session ID provided after waiting.<br>
+              <code style="background: #f5f5f5; padding: 2px 6px; border-radius: 3px; font-size: 12px;">create-target-session</code> 
+              must be called before 
+              <code style="background: #f5f5f5; padding: 2px 6px; border-radius: 3px; font-size: 12px;">authenticate-target</code>
+            </p>
+          </div>
+        `;
+        return;
+      }
+      
+      // Try again in 250ms
+      console.log(`Waiting for sessionId... (${pollAttempts}/${maxPollAttempts})`);
+      setTimeout(pollForSessionId, 250);
     }
     
-    console.log('toolOutput:', toolOutput);
-    console.log('sessionId:', sessionId);
-    console.log('authenticated:', authenticated);
-    console.log('theme:', theme);
-    
-    // Check if already authenticated (from server)
-    if (authenticated) {
-      // Show "already authenticated" confirmation screen
-      document.getElementById('screen-login').classList.add('hidden');
-      document.getElementById('screen-already-auth').classList.remove('hidden');
-      console.log('Showing already-authenticated screen');
-      // No further interaction needed - just showing confirmation
+    function initializeWidget() {
+      console.log('Initializing widget with sessionId:', sessionId);
+
+      // Apply theme (dark/light mode)
+      const theme = window.openai?.theme || 'light';
+      if (theme === 'dark') {
+        document.body.classList.add('dark-mode');
+      }
+      
+      // Check if already authenticated (from server)
+      if (authenticated) {
+        // Show "already authenticated" confirmation screen
+        document.getElementById('screen-login').classList.add('hidden');
+        document.getElementById('screen-already-auth').classList.remove('hidden');
+        console.log('Showing already-authenticated screen');
+        // No further interaction needed - just showing confirmation
+      }
     }
     
     let userEmail = '';
@@ -559,7 +586,9 @@
       }
     });
     
-    console.log('Target Auth Widget ready');
+    // Start polling for sessionId
+    console.log('Starting to poll for sessionId...');
+    pollForSessionId();
   </script>
 </body>
 </html>
