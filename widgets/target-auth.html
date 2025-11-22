@@ -221,6 +221,17 @@
       margin-top: 16px;
     }
 
+    .auth-name {
+      font-size: 18px;
+      font-weight: 600;
+      color: #333;
+      transition: color 0.2s;
+    }
+
+    body.dark-mode .auth-name {
+      color: white;
+    }
+
     .user-email {
       color: #cc0000;
       font-weight: 600;
@@ -329,7 +340,7 @@
         <div class="confirmation-text">
           <p style="margin: 16px 0;">
             Authenticated as<br>
-            <span id="userName" style="font-size: 18px; font-weight: 600; color: white;">Lauren Bailey</span>
+            <span id="userName" class="auth-name">Lauren Bailey</span>
           </p>
           <p style="font-size: 14px; color: #999;">
             <span class="user-email" id="userEmail"></span>
@@ -348,7 +359,7 @@
         <div class="confirmation-text">
           <p style="margin: 16px 0;">
             Authenticated as<br>
-            <span style="font-size: 18px; font-weight: 600; color: white;">Lauren Bailey</span>
+            <span class="auth-name">Lauren Bailey</span>
           </p>
           <p style="font-size: 14px; color: #999;">
             Session active

@@ -158,7 +158,7 @@ function createPizzazServer() {
         },
         {
           name: widget.id,
-          description: 'Authenticate a Target customer. REQUIRES a sessionId from create-target-session. Will show login flow if not authenticated, or confirmation if already authenticated.',
+          description: 'Show Target authentication UI. ONLY call this to display the login widget. REQUIRES a sessionId from create-target-session. After user completes auth, use get-target-auth-status instead.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -176,6 +176,27 @@ function createPizzazServer() {
             destructiveHint: false,
             openWorldHint: false,
             readOnlyHint: false
+          }
+        },
+        {
+          name: 'get-target-auth-status',
+          description: 'Check Target authentication status. Returns authentication data WITHOUT showing UI. Use this after user has authenticated to check status.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              sessionId: {
+                type: 'string',
+                description: 'The session ID to check'
+              }
+            },
+            required: ['sessionId'],
+            additionalProperties: false
+          },
+          title: 'Get Target Auth Status',
+          annotations: {
+            destructiveHint: false,
+            openWorldHint: false,
+            readOnlyHint: true
           }
         }
       ]
@@ -213,7 +234,7 @@ function createPizzazServer() {
         };
       }
       
-      // Handle authenticate-target
+      // Handle authenticate-target (shows UI)
       if (request.params.name === widget.id) {
         const args = request.params.arguments || {};
         const sessionId = args.sessionId;
@@ -235,7 +256,7 @@ function createPizzazServer() {
           authSessions.set(sessionId, session);
         }
         
-        console.log(`Auth check for session ${sessionId}:`, session);
+        console.log(`Showing auth UI for session ${sessionId}:`, session);
         
         return {
           content: [
@@ -253,6 +274,49 @@ function createPizzazServer() {
             name: session.name
           },
           _meta: widgetInvocationMeta(widget)
+        };
+      }
+      
+      // Handle get-target-auth-status (NO UI, just data)
+      if (request.params.name === 'get-target-auth-status') {
+        const args = request.params.arguments || {};
+        const sessionId = args.sessionId;
+        
+        if (!sessionId) {
+          throw new Error('sessionId is required.');
+        }
+        
+        const session = authSessions.get(sessionId);
+        
+        if (!session) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Session ${sessionId} not found. Create a session with create-target-session first.`
+              }
+            ]
+          };
+        }
+        
+        console.log(`Getting auth status for session ${sessionId}:`, session);
+        
+        return {
+          content: [
+            {
+              type: 'text',
+              text: session.authenticated 
+                ? `Customer is authenticated as ${session.name} (${session.email}).`
+                : 'Customer is not authenticated. Call authenticate-target to show the login UI.'
+            }
+          ],
+          structuredContent: {
+            sessionId: sessionId,
+            authenticated: session.authenticated,
+            email: session.email,
+            name: session.name
+          }
+          // NOTE: No _meta here - this tool does NOT show embedded UI
         };
       }
       
