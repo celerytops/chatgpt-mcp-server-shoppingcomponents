@@ -158,13 +158,13 @@ function createPizzazServer() {
         },
         {
           name: widget.id,
-          description: 'Show Target authentication UI. ONLY call this to display the login widget. REQUIRES a sessionId from create-target-session. After user completes auth, use get-target-auth-status instead.',
+          description: 'Show Target authentication UI. CRITICAL: You MUST call create-target-session FIRST to get a sessionId, then pass that sessionId to this tool. Do NOT call this without a valid sessionId. After user completes auth, use get-target-auth-status to check status.',
           inputSchema: {
             type: 'object',
             properties: {
               sessionId: {
                 type: 'string',
-                description: 'The session ID from create-target-session'
+                description: 'The session ID obtained from create-target-session. This is REQUIRED and must be provided.'
               }
             },
             required: ['sessionId'],

@@ -230,6 +230,15 @@
       color: #f0f0f0;
     }
 
+    .auth-text {
+      color: #333 !important;
+      transition: color 0.2s;
+    }
+
+    body.dark-mode .auth-text {
+      color: white !important;
+    }
+
     .auth-name {
       font-size: 18px;
       font-weight: 600;
@@ -347,7 +356,7 @@
         <p class="subtitle">You're now signed in</p>
         
         <div class="confirmation-text">
-          <p style="margin: 16px 0;">
+          <p class="auth-text" style="margin: 16px 0;">
             Authenticated as<br>
             <span id="userName" class="auth-name">Lauren Bailey</span>
           </p>
@@ -366,7 +375,7 @@
         <p class="subtitle">You're already signed in</p>
         
         <div class="confirmation-text">
-          <p style="margin: 16px 0;">
+          <p class="auth-text" style="margin: 16px 0;">
             Authenticated as<br>
             <span class="auth-name">Lauren Bailey</span>
           </p>
@@ -383,8 +392,20 @@
     
     // Get data from window.openai
     const toolOutput = window.openai?.toolOutput || {};
-    const sessionId = toolOutput.sessionId || 'demo_' + Date.now();
+    const sessionId = toolOutput.sessionId;
     const authenticated = toolOutput.authenticated === true;
+    
+    // Check if sessionId is missing (should never happen if create-target-session was called first)
+    if (!sessionId) {
+      console.error('ERROR: No sessionId provided! create-target-session must be called first.');
+      document.querySelector('.container').innerHTML = `
+        <div style="text-align: center; padding: 20px;">
+          <h1 style="color: #cc0000; margin-bottom: 16px;">⚠️ Configuration Error</h1>
+          <p style="color: #666;">No session ID provided. Please try again.</p>
+        </div>
+      `;
+      throw new Error('No sessionId provided - create-target-session must be called first');
+    }
     
     // Apply theme (dark/light mode)
     const theme = window.openai?.theme || 'light';
