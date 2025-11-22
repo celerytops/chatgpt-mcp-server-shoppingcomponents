@@ -143,7 +143,7 @@ function createPizzazServer() {
       tools: [
         {
           name: 'create-target-session',
-          description: 'Create a new Target authentication session. OPTIONAL - authenticate-target will create a session automatically if not provided. Only use this if you need a session ID before showing the UI.',
+          description: 'STEP 1: Create a new Target authentication session. You MUST call this FIRST to get a sessionId. Returns a sessionId that must be passed to authenticate-target.',
           inputSchema: {
             type: 'object',
             properties: {},
@@ -158,15 +158,16 @@ function createPizzazServer() {
         },
         {
           name: widget.id,
-          description: 'Show Target authentication UI. If sessionId is provided, check existing session. If not provided, creates a new session automatically. After user completes auth, use get-target-auth-status to check status.',
+          description: 'STEP 2: Show Target authentication UI. REQUIRES sessionId from create-target-session (STEP 1). DO NOT call this until you have a sessionId from create-target-session. After user completes auth, use get-target-auth-status to check status.',
           inputSchema: {
             type: 'object',
             properties: {
               sessionId: {
                 type: 'string',
-                description: 'Optional session ID. If not provided, a new session will be created automatically.'
+                description: 'REQUIRED: The session ID from create-target-session. This parameter is mandatory.'
               }
             },
+            required: ['sessionId'],
             additionalProperties: false
           },
           title: widget.title,
@@ -240,26 +241,17 @@ function createPizzazServer() {
       // Handle authenticate-target (shows UI)
       if (request.params.name === widget.id) {
         const args = request.params.arguments || {};
-        let sessionId = args.sessionId;
+        const sessionId = args.sessionId;
         
-        // If no sessionId provided, create a new one
+        // REQUIRE sessionId - must call create-target-session first
         if (!sessionId) {
-          sessionId = 'sess_' + Math.random().toString(36).substring(2, 15);
-          console.log(`No sessionId provided, creating new session: ${sessionId}`);
+          throw new Error('sessionId is REQUIRED. You must call create-target-session FIRST to get a sessionId, then pass it to authenticate-target.');
         }
         
-        // Get or create session
+        // Get session (should already exist from create-target-session)
         let session = authSessions.get(sessionId);
         if (!session) {
-          // Create session if it doesn't exist
-          session = {
-            authenticated: false,
-            email: null,
-            name: null,
-            createdAt: Date.now()
-          };
-          authSessions.set(sessionId, session);
-          console.log(`Created new auth session: ${sessionId}`);
+          throw new Error(`Session ${sessionId} not found. Call create-target-session to create a valid session first.`);
         }
         
         console.log(`Showing auth UI for session ${sessionId}:`, session);
