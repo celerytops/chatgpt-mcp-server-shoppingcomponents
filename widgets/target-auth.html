@@ -312,7 +312,7 @@
           margin: 0 auto 24px;
           animation: spin 1s linear infinite;
         "></div>
-        <p class="subtitle" id="loading-status">Waiting for session ID...</p>
+        <p class="subtitle" id="loading-status">Loading authentication portal...</p>
       </div>
     </div>
 
@@ -431,7 +431,7 @@
       pollAttempts++;
       const statusEl = document.getElementById('loading-status');
       if (statusEl) {
-        statusEl.textContent = `Waiting for session... (${pollAttempts})`;
+        statusEl.textContent = `Loading authentication portal...`;
       }
       
       console.log(`[Poll ${pollAttempts}] Checking toolOutput:`, JSON.stringify(toolOutput));
