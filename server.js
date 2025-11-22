@@ -430,8 +430,166 @@ const httpServer = createServer(
         description: 'Target customer authentication component for ChatGPT',
         endpoints: {
           mcp: ssePath,
-          messages: postPath
+          messages: postPath,
+          openapi: '/openapi.json'
         }
+      }));
+      return;
+    }
+
+    // OpenAPI Schema for Custom GPT Actions
+    if (req.method === 'GET' && url.pathname === '/openapi.json') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        openapi: '3.1.0',
+        info: {
+          title: 'Target Customer Authentication API',
+          description: 'API for authenticating Target customers through a branded login experience',
+          version: '1.0.0'
+        },
+        servers: [
+          {
+            url: 'https://chatgpt-components-0d9232341440.herokuapp.com'
+          }
+        ],
+        paths: {
+          '/api/auth/create-session': {
+            post: {
+              operationId: 'createTargetSession',
+              summary: 'Create a new Target authentication session',
+              description: 'STEP 1: Creates a new authentication session and returns a session ID. Call this FIRST before authenticating.',
+              responses: {
+                '200': {
+                  description: 'Session created successfully',
+                  content: {
+                    'application/json': {
+                      schema: {
+                        type: 'object',
+                        properties: {
+                          sessionId: {
+                            type: 'string',
+                            description: 'Unique session identifier'
+                          },
+                          message: {
+                            type: 'string',
+                            description: 'Success message'
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          '/api/auth/status/{sessionId}': {
+            get: {
+              operationId: 'getAuthStatus',
+              summary: 'Check Target authentication status',
+              description: 'Returns the current authentication status for a session. Use this after user has completed authentication.',
+              parameters: [
+                {
+                  name: 'sessionId',
+                  in: 'path',
+                  required: true,
+                  schema: {
+                    type: 'string'
+                  },
+                  description: 'The session ID from create-session'
+                }
+              ],
+              responses: {
+                '200': {
+                  description: 'Authentication status',
+                  content: {
+                    'application/json': {
+                      schema: {
+                        type: 'object',
+                        properties: {
+                          sessionId: {
+                            type: 'string'
+                          },
+                          authenticated: {
+                            type: 'boolean',
+                            description: 'Whether the customer is authenticated'
+                          },
+                          email: {
+                            type: 'string',
+                            description: 'Customer email address'
+                          },
+                          name: {
+                            type: 'string',
+                            description: 'Customer name'
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }, null, 2));
+      return;
+    }
+
+    // REST API: Create session (for Custom GPT Actions)
+    if (req.method === 'POST' && url.pathname === '/api/auth/create-session') {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Content-Type', 'application/json');
+      
+      const sessionId = 'sess_' + Math.random().toString(36).substring(2, 15);
+      
+      authSessions.set(sessionId, {
+        authenticated: false,
+        email: null,
+        name: null,
+        createdAt: Date.now()
+      });
+      
+      console.log(`REST API: Created session ${sessionId}`);
+      
+      res.writeHead(200);
+      res.end(JSON.stringify({
+        sessionId: sessionId,
+        message: 'Session created. Use this sessionId to check authentication status.'
+      }));
+      return;
+    }
+
+    // REST API: Get auth status (for Custom GPT Actions)
+    if (req.method === 'GET' && url.pathname.startsWith('/api/auth/status/')) {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Content-Type', 'application/json');
+      
+      const sessionId = url.pathname.split('/api/auth/status/')[1];
+      
+      if (!sessionId) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: 'sessionId required' }));
+        return;
+      }
+      
+      const session = authSessions.get(sessionId);
+      
+      if (!session) {
+        res.writeHead(404);
+        res.end(JSON.stringify({ 
+          error: 'Session not found',
+          sessionId: sessionId 
+        }));
+        return;
+      }
+      
+      console.log(`REST API: Status check for session ${sessionId}:`, session);
+      
+      res.writeHead(200);
+      res.end(JSON.stringify({
+        sessionId: sessionId,
+        authenticated: session.authenticated,
+        email: session.email,
+        name: session.name
       }));
       return;
     }
@@ -489,6 +647,17 @@ const httpServer = createServer(
       res.writeHead(204, {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'content-type'
+      });
+      res.end();
+      return;
+    }
+
+    // CORS preflight for REST API endpoints
+    if (req.method === 'OPTIONS' && (url.pathname === '/api/auth/create-session' || url.pathname.startsWith('/api/auth/status/'))) {
+      res.writeHead(204, {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
         'Access-Control-Allow-Headers': 'content-type'
       });
       res.end();
