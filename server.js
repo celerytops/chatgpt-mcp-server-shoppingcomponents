@@ -164,8 +164,7 @@ function createPizzazServer() {
             properties: {
               sessionId: {
                 type: 'string',
-                description: 'The session ID from create-target-session',
-                required: true
+                description: 'The session ID from create-target-session'
               }
             },
             required: ['sessionId'],
