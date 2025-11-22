@@ -207,32 +207,36 @@ function createPizzazServer() {
   server.setRequestHandler(
     CallToolRequestSchema,
     async (request) => {
-      // Handle create-target-session
-      if (request.params.name === 'create-target-session') {
-        const sessionId = 'sess_' + Math.random().toString(36).substring(2, 15);
+      try {
+        console.log(`Tool called: ${request.params.name}`, request.params.arguments);
         
-        // Create new unauthenticated session
-        authSessions.set(sessionId, {
-          authenticated: false,
-          email: null,
-          name: null,
-          createdAt: Date.now()
-        });
-        
-        console.log(`Created new session: ${sessionId}`);
-        
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Session created: ${sessionId}. Use this session ID with authenticate-target.`
+        // Handle create-target-session
+        if (request.params.name === 'create-target-session') {
+          const sessionId = 'sess_' + Math.random().toString(36).substring(2, 15);
+          
+          // Create new unauthenticated session
+          authSessions.set(sessionId, {
+            authenticated: false,
+            email: null,
+            name: null,
+            createdAt: Date.now()
+          });
+          
+          console.log(`✓ Created new auth session: ${sessionId}`);
+          console.log(`  Total auth sessions: ${authSessions.size}`);
+          
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Session created: ${sessionId}. Use this session ID with authenticate-target.`
+              }
+            ],
+            structuredContent: {
+              sessionId: sessionId
             }
-          ],
-          structuredContent: {
-            sessionId: sessionId
-          }
-        };
-      }
+          };
+        }
       
       // Handle authenticate-target (shows UI)
       if (request.params.name === widget.id) {
@@ -320,7 +324,11 @@ function createPizzazServer() {
         };
       }
       
-      throw new Error(`Unknown tool: ${request.params.name}`);
+        throw new Error(`Unknown tool: ${request.params.name}`);
+      } catch (error) {
+        console.error(`Error in tool ${request.params.name}:`, error);
+        throw error;
+      }
     }
   );
 
@@ -359,8 +367,8 @@ async function handleSseRequest(res) {
     await server.connect(transport);
     console.log(`✓ SSE session ${sessionId} connected`);
   } catch (error) {
-    sessions.delete(sessionId);
-    console.error('Failed to start SSE session:', error.message);
+    sseConnections.delete(sessionId);
+    console.error('✗ Failed to start SSE session:', error.message, error.stack);
     if (!res.headersSent) {
       res.writeHead(500).end('Failed to establish SSE connection');
     }
