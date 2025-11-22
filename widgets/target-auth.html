@@ -300,8 +300,24 @@
       <p class="subtitle">Access your Target account</p>
     </div>
 
+    <!-- Screen 0: Loading (waiting for sessionId) -->
+    <div id="screen-loading">
+      <div style="text-align: center;">
+        <div class="loading-spinner" style="
+          width: 48px;
+          height: 48px;
+          border: 4px solid #f3f3f3;
+          border-top: 4px solid #cc0000;
+          border-radius: 50%;
+          margin: 0 auto 24px;
+          animation: spin 1s linear infinite;
+        "></div>
+        <p class="subtitle" id="loading-status">Waiting for session ID...</p>
+      </div>
+    </div>
+
     <!-- Screen 1: Login -->
-    <div id="screen-login">
+    <div id="screen-login" class="hidden">
       <form id="loginForm">
         <div class="form-group">
           <label for="email">Email</label>
