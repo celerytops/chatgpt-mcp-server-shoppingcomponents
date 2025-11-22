@@ -453,6 +453,22 @@ const httpServer = createServer(
       return;
     }
 
+    // Serve privacy policy page
+    if (req.method === 'GET' && url.pathname === '/privacy') {
+      const privacyHtmlPath = path.join(__dirname, 'public', 'privacy.html');
+      
+      if (!fs.existsSync(privacyHtmlPath)) {
+        res.writeHead(404);
+        res.end('Privacy policy not found');
+        return;
+      }
+      
+      const html = fs.readFileSync(privacyHtmlPath, 'utf8');
+      res.writeHead(200, { 'Content-Type': 'text/html' });
+      res.end(html);
+      return;
+    }
+
     // OpenAPI Schema for Custom GPT Actions
     if (req.method === 'GET' && url.pathname === '/openapi.json') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
