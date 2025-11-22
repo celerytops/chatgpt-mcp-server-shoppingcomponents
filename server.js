@@ -142,17 +142,33 @@ function createPizzazServer() {
     async (_request) => ({
       tools: [
         {
+          name: 'create-target-session',
+          description: 'Create a new Target authentication session. Call this FIRST to get a session ID before authenticating.',
+          inputSchema: {
+            type: 'object',
+            properties: {},
+            additionalProperties: false
+          },
+          title: 'Create Target Session',
+          annotations: {
+            destructiveHint: false,
+            openWorldHint: false,
+            readOnlyHint: true
+          }
+        },
+        {
           name: widget.id,
-          description: 'Authenticate a Target customer. Call with authenticated=false to show login form. After user completes authentication, call with authenticated=true to show confirmation.',
+          description: 'Authenticate a Target customer. REQUIRES a sessionId from create-target-session. Will show login flow if not authenticated, or confirmation if already authenticated.',
           inputSchema: {
             type: 'object',
             properties: {
-              authenticated: {
-                type: 'boolean',
-                description: 'Whether the customer is already authenticated. Use false for initial login, true for showing confirmation after authentication.',
-                default: false
+              sessionId: {
+                type: 'string',
+                description: 'The session ID from create-target-session',
+                required: true
               }
             },
+            required: ['sessionId'],
             additionalProperties: false
           },
           title: widget.title,
@@ -171,40 +187,88 @@ function createPizzazServer() {
   server.setRequestHandler(
     CallToolRequestSchema,
     async (request) => {
-      if (request.params.name !== widget.id) {
-        throw new Error(`Unknown tool: ${request.params.name}`);
-      }
-
-      // Get authenticated status from arguments (default to false)
-      const args = request.params.arguments || {};
-      const authenticated = args.authenticated === true;
-
-      // Generate a session ID for this authentication
-      const sessionId = 'sess_' + Math.random().toString(36).substring(2, 15);
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: authenticated 
-              ? 'Authentication confirmed. Lauren Bailey is signed in.'
-              : widget.responseText
+      // Handle create-target-session
+      if (request.params.name === 'create-target-session') {
+        const sessionId = 'sess_' + Math.random().toString(36).substring(2, 15);
+        
+        // Create new unauthenticated session
+        authSessions.set(sessionId, {
+          authenticated: false,
+          email: null,
+          name: null,
+          createdAt: Date.now()
+        });
+        
+        console.log(`Created new session: ${sessionId}`);
+        
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Session created: ${sessionId}. Use this session ID with authenticate-target.`
+            }
+          ],
+          structuredContent: {
+            sessionId: sessionId
           }
-        ],
-        structuredContent: {
-          sessionId: sessionId,
-          authenticated: authenticated
-        },
-        _meta: widgetInvocationMeta(widget)
-      };
+        };
+      }
+      
+      // Handle authenticate-target
+      if (request.params.name === widget.id) {
+        const args = request.params.arguments || {};
+        const sessionId = args.sessionId;
+        
+        if (!sessionId) {
+          throw new Error('sessionId is required. Call create-target-session first to get a session ID.');
+        }
+        
+        // Get or create session
+        let session = authSessions.get(sessionId);
+        if (!session) {
+          // Create session if it doesn't exist
+          session = {
+            authenticated: false,
+            email: null,
+            name: null,
+            createdAt: Date.now()
+          };
+          authSessions.set(sessionId, session);
+        }
+        
+        console.log(`Auth check for session ${sessionId}:`, session);
+        
+        return {
+          content: [
+            {
+              type: 'text',
+              text: session.authenticated 
+                ? `Authentication confirmed. ${session.name} is signed in.`
+                : widget.responseText
+            }
+          ],
+          structuredContent: {
+            sessionId: sessionId,
+            authenticated: session.authenticated,
+            email: session.email,
+            name: session.name
+          },
+          _meta: widgetInvocationMeta(widget)
+        };
+      }
+      
+      throw new Error(`Unknown tool: ${request.params.name}`);
     }
   );
 
   return server;
 }
 
-// Session management
-const sessions = new Map();
+// Session management for SSE connections
+const sseConnections = new Map();
+
+// Authentication session tracking
+const authSessions = new Map(); // sessionId -> { authenticated: boolean, email: string, name: string }
 
 const ssePath = '/mcp';
 const postPath = '/mcp/messages';
@@ -216,10 +280,10 @@ async function handleSseRequest(res) {
   const transport = new SSEServerTransport(postPath, res);
   const sessionId = transport.sessionId;
 
-  sessions.set(sessionId, { server, transport });
+  sseConnections.set(sessionId, { server, transport });
 
   transport.onclose = async () => {
-    sessions.delete(sessionId);
+    sseConnections.delete(sessionId);
     // NOTE: Do NOT call server.close() here - it creates circular reference:
     // transport.onclose -> server.close() -> transport.close() -> transport.onclose -> ...
   };
@@ -251,15 +315,15 @@ async function handlePostMessage(req, res, url) {
     return;
   }
 
-  const session = sessions.get(sessionId);
+  const connection = sseConnections.get(sessionId);
 
-  if (!session) {
+  if (!connection) {
     res.writeHead(404).end('Unknown session');
     return;
   }
 
   try {
-    await session.transport.handlePostMessage(req, res);
+    await connection.transport.handlePostMessage(req, res);
   } catch (error) {
     console.error('Failed to process message', error);
     if (!res.headersSent) {
@@ -304,6 +368,65 @@ const httpServer = createServer(
           messages: postPath
         }
       }));
+      return;
+    }
+
+    // Session authentication endpoint (for widget to mark session as authenticated)
+    if (req.method === 'POST' && url.pathname === '/api/session/authenticate') {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Headers', 'content-type');
+      res.setHeader('Content-Type', 'application/json');
+      
+      let body = '';
+      req.on('data', chunk => {
+        body += chunk.toString();
+      });
+      
+      req.on('end', () => {
+        try {
+          const data = JSON.parse(body);
+          const { sessionId, email, name } = data;
+          
+          if (!sessionId) {
+            res.writeHead(400);
+            res.end(JSON.stringify({ error: 'sessionId required' }));
+            return;
+          }
+          
+          const session = authSessions.get(sessionId);
+          if (!session) {
+            res.writeHead(404);
+            res.end(JSON.stringify({ error: 'Session not found' }));
+            return;
+          }
+          
+          // Mark session as authenticated
+          session.authenticated = true;
+          session.email = email || null;
+          session.name = name || 'Lauren Bailey';
+          authSessions.set(sessionId, session);
+          
+          console.log(`Session ${sessionId} marked as authenticated:`, session);
+          
+          res.writeHead(200);
+          res.end(JSON.stringify({ success: true, session }));
+        } catch (error) {
+          console.error('Error authenticating session:', error);
+          res.writeHead(500);
+          res.end(JSON.stringify({ error: error.message }));
+        }
+      });
+      return;
+    }
+
+    // CORS preflight for session endpoint
+    if (req.method === 'OPTIONS' && url.pathname === '/api/session/authenticate') {
+      res.writeHead(204, {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'content-type'
+      });
+      res.end();
       return;
     }
 
