@@ -392,20 +392,8 @@
     
     // Get data from window.openai
     const toolOutput = window.openai?.toolOutput || {};
-    const sessionId = toolOutput.sessionId;
+    const sessionId = toolOutput.sessionId || 'fallback_' + Date.now();
     const authenticated = toolOutput.authenticated === true;
-    
-    // Check if sessionId is missing (should never happen if create-target-session was called first)
-    if (!sessionId) {
-      console.error('ERROR: No sessionId provided! create-target-session must be called first.');
-      document.querySelector('.container').innerHTML = `
-        <div style="text-align: center; padding: 20px;">
-          <h1 style="color: #cc0000; margin-bottom: 16px;">⚠️ Configuration Error</h1>
-          <p style="color: #666;">No session ID provided. Please try again.</p>
-        </div>
-      `;
-      throw new Error('No sessionId provided - create-target-session must be called first');
-    }
     
     // Apply theme (dark/light mode)
     const theme = window.openai?.theme || 'light';

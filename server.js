@@ -143,7 +143,7 @@ function createPizzazServer() {
       tools: [
         {
           name: 'create-target-session',
-          description: 'Create a new Target authentication session. Call this FIRST to get a session ID before authenticating.',
+          description: 'Create a new Target authentication session. OPTIONAL - authenticate-target will create a session automatically if not provided. Only use this if you need a session ID before showing the UI.',
           inputSchema: {
             type: 'object',
             properties: {},
@@ -158,16 +158,15 @@ function createPizzazServer() {
         },
         {
           name: widget.id,
-          description: 'Show Target authentication UI. CRITICAL: You MUST call create-target-session FIRST to get a sessionId, then pass that sessionId to this tool. Do NOT call this without a valid sessionId. After user completes auth, use get-target-auth-status to check status.',
+          description: 'Show Target authentication UI. If sessionId is provided, check existing session. If not provided, creates a new session automatically. After user completes auth, use get-target-auth-status to check status.',
           inputSchema: {
             type: 'object',
             properties: {
               sessionId: {
                 type: 'string',
-                description: 'The session ID obtained from create-target-session. This is REQUIRED and must be provided.'
+                description: 'Optional session ID. If not provided, a new session will be created automatically.'
               }
             },
-            required: ['sessionId'],
             additionalProperties: false
           },
           title: widget.title,
@@ -241,10 +240,12 @@ function createPizzazServer() {
       // Handle authenticate-target (shows UI)
       if (request.params.name === widget.id) {
         const args = request.params.arguments || {};
-        const sessionId = args.sessionId;
+        let sessionId = args.sessionId;
         
+        // If no sessionId provided, create a new one
         if (!sessionId) {
-          throw new Error('sessionId is required. Call create-target-session first to get a session ID.');
+          sessionId = 'sess_' + Math.random().toString(36).substring(2, 15);
+          console.log(`No sessionId provided, creating new session: ${sessionId}`);
         }
         
         // Get or create session
@@ -258,6 +259,7 @@ function createPizzazServer() {
             createdAt: Date.now()
           };
           authSessions.set(sessionId, session);
+          console.log(`Created new auth session: ${sessionId}`);
         }
         
         console.log(`Showing auth UI for session ${sessionId}:`, session);
