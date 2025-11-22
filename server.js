@@ -437,6 +437,22 @@ const httpServer = createServer(
       return;
     }
 
+    // Serve standalone auth page
+    if (req.method === 'GET' && url.pathname === '/auth') {
+      const authHtmlPath = path.join(__dirname, 'public', 'auth.html');
+      
+      if (!fs.existsSync(authHtmlPath)) {
+        res.writeHead(404);
+        res.end('Auth page not found');
+        return;
+      }
+      
+      const html = fs.readFileSync(authHtmlPath, 'utf8');
+      res.writeHead(200, { 'Content-Type': 'text/html' });
+      res.end(html);
+      return;
+    }
+
     // OpenAPI Schema for Custom GPT Actions
     if (req.method === 'GET' && url.pathname === '/openapi.json') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -444,7 +460,7 @@ const httpServer = createServer(
         openapi: '3.1.0',
         info: {
           title: 'Target Customer Authentication API',
-          description: 'API for authenticating Target customers through a branded login experience',
+          description: 'API for authenticating Target customers through a branded login experience. WORKFLOW: 1) Call createTargetSession to get a sessionId. 2) Generate authentication link: https://chatgpt-components-0d9232341440.herokuapp.com/auth?session={sessionId} and share it with the user. 3) User clicks link, authenticates on Target-branded page. 4) After user says they are done, call getAuthStatus to verify authentication.',
           version: '1.0.0'
         },
         servers: [
@@ -457,7 +473,7 @@ const httpServer = createServer(
             post: {
               operationId: 'createTargetSession',
               summary: 'Create a new Target authentication session',
-              description: 'STEP 1: Creates a new authentication session and returns a session ID. Call this FIRST before authenticating.',
+              description: 'STEP 1: Creates a new authentication session and returns a session ID. After receiving the sessionId, generate an authentication link: https://chatgpt-components-0d9232341440.herokuapp.com/auth?session={sessionId} and provide it to the user so they can sign in.',
               responses: {
                 '200': {
                   description: 'Session created successfully',
@@ -486,7 +502,7 @@ const httpServer = createServer(
             get: {
               operationId: 'getAuthStatus',
               summary: 'Check Target authentication status',
-              description: 'Returns the current authentication status for a session. Use this after user has completed authentication.',
+              description: 'STEP 2: Returns the current authentication status for a session. Call this AFTER the user has visited the authentication link and completed sign-in to verify they are authenticated.',
               parameters: [
                 {
                   name: 'sessionId',
