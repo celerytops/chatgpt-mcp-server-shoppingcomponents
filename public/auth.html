@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Secure Sign In</title>
+  <meta http-equiv="refresh" content="0; url=https://www.target.com/login?client_id=ecom-web-1.0.0&ui_namespace=ui-default&back_button_action=browser&keep_me_signed_in=true&kmsi_default=false&actions=create_session_signin&amr=passkey_create&amr=email&amr=password&signin_amr=true&username=off%2A%2A%2A">
+  <title>Redirecting to Target Sign In</title>
   <style>
     * {
       margin: 0;
@@ -209,202 +210,22 @@
   </style>
 </head>
 <body>
-  <div class="disclaimer">
-    <p><strong>⚠️ DEMONSTRATION ONLY</strong><br>This is a demo authentication portal for testing ChatGPT integrations. No real credentials are processed. Any email/password combination will work for testing purposes.</p>
-  </div>
-  
   <div class="container">
     <div class="header">
       <div class="auth-icon">🔐</div>
-      <h1>Sign In</h1>
-      <p class="subtitle">Secure Authentication Portal</p>
+      <h1>Redirecting to Target...</h1>
+      <p class="subtitle">You will be redirected to Target's secure login page</p>
     </div>
-
-    <!-- Error message (shown if no sessionId) -->
-    <div id="error-screen" class="hidden">
-      <div class="error-message">
-        ⚠️ Invalid authentication link. Please request a new authentication link.
-      </div>
-    </div>
-
-    <!-- Screen 1: Login -->
-    <div id="screen-login" class="hidden">
-      <form id="loginForm">
-        <div class="form-group">
-          <label for="email">Email (Demo - any email works)</label>
-          <input
-            type="email"
-            id="email"
-            placeholder="demo@example.com"
-            value="demo@example.com"
-            required
-            autocomplete="email"
-          />
-        </div>
-
-        <div class="form-group">
-          <label for="password">Password (Demo - any password works)</label>
-          <input
-            type="password"
-            id="password"
-            placeholder="password"
-            value="demo123"
-            required
-            autocomplete="current-password"
-          />
-        </div>
-
-        <button type="submit" class="btn-primary" id="loginBtn">
-          Sign In
-        </button>
-      </form>
-    </div>
-
-    <!-- Screen 2: Verification Code -->
-    <div id="screen-verify" class="hidden">
-      <p class="subtitle" style="text-align: center; margin-bottom: 16px;">
-        Enter the 6-digit code sent to your phone
-      </p>
-      <p style="text-align: center; font-size: 12px; color: #999; margin-bottom: 24px;">(Demo: any 6-digit code works)</p>
-      
-      <form id="verifyForm">
-        <div class="code-inputs">
-          <input type="text" class="code-input" maxlength="1" data-index="0" value="1" />
-          <input type="text" class="code-input" maxlength="1" data-index="1" value="2" />
-          <input type="text" class="code-input" maxlength="1" data-index="2" value="3" />
-          <input type="text" class="code-input" maxlength="1" data-index="3" value="4" />
-          <input type="text" class="code-input" maxlength="1" data-index="4" value="5" />
-          <input type="text" class="code-input" maxlength="1" data-index="5" value="6" />
-        </div>
-
-        <button type="submit" class="btn-primary" id="verifyBtn">
-          Submit Code
-        </button>
-      </form>
-    </div>
-
-    <!-- Screen 3: Success -->
-    <div id="screen-success" class="hidden">
-      <div style="text-align: center;">
-        <div class="success-icon">✓</div>
-        <h1 style="margin-bottom: 8px;">Welcome Back!</h1>
-        <p class="subtitle" style="margin-bottom: 24px;">You're now signed in</p>
-        
-        <div style="background: #f5f5f5; padding: 16px; border-radius: 8px; margin-bottom: 24px;">
-          <p style="font-size: 14px; color: #666; margin-bottom: 8px;">Authenticated as</p>
-          <p style="font-size: 18px; font-weight: 600; color: #333;">Lauren Bailey</p>
-          <p style="font-size: 14px; color: #999; margin-top: 8px;" id="userEmail"></p>
-        </div>
-
-        <div style="background: #e3f2fd; padding: 16px; border-radius: 8px; text-align: left;">
-          <p style="font-size: 14px; color: #1976d2; font-weight: 600; margin-bottom: 8px;">✓ Authentication Complete</p>
-          <p style="font-size: 13px; color: #1565c0;">Return to your conversation and let the assistant know you've signed in. Your authentication will be verified automatically.</p>
-        </div>
-      </div>
+    
+    <div style="text-align: center; padding: 20px;">
+      <div class="loading" style="display: inline-block;"></div>
+      <p style="margin-top: 16px; color: #666;">If you are not redirected automatically, <a href="https://www.target.com/login?client_id=ecom-web-1.0.0&ui_namespace=ui-default&back_button_action=browser&keep_me_signed_in=true&kmsi_default=false&actions=create_session_signin&amr=passkey_create&amr=email&amr=password&signin_amr=true&username=off%2A%2A%2A" style="color: #4299e1;">click here</a>.</p>
     </div>
   </div>
 
   <script>
-    // Get sessionId from URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const sessionId = urlParams.get('session');
-    
-    console.log('Auth page loaded with sessionId:', sessionId);
-    
-    if (!sessionId) {
-      document.getElementById('error-screen').classList.remove('hidden');
-    } else {
-      document.getElementById('screen-login').classList.remove('hidden');
-    }
-    
-    let userEmail = '';
-    
-    // Screen 1: Login Form
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-      const loginBtn = document.getElementById('loginBtn');
-      
-      userEmail = email;
-      
-      // Show loading
-      loginBtn.disabled = true;
-      loginBtn.innerHTML = '<span class="loading"></span>Signing in...';
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // Move to verification screen
-      document.getElementById('screen-login').classList.add('hidden');
-      document.getElementById('screen-verify').classList.remove('hidden');
-      
-      // Focus first code input
-      document.querySelector('.code-input[data-index="0"]').focus();
-    });
-    
-    // Screen 2: Verification Code
-    const codeInputs = document.querySelectorAll('.code-input');
-    
-    // Auto-advance to next input
-    codeInputs.forEach((input, index) => {
-      input.addEventListener('input', (e) => {
-        if (e.target.value.length === 1 && index < codeInputs.length - 1) {
-          codeInputs[index + 1].focus();
-        }
-      });
-      
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'Backspace' && !e.target.value && index > 0) {
-          codeInputs[index - 1].focus();
-        }
-      });
-    });
-    
-    document.getElementById('verifyForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      const code = Array.from(codeInputs).map(input => input.value).join('');
-      const verifyBtn = document.getElementById('verifyBtn');
-      
-      if (code.length !== 6) {
-        alert('Please enter all 6 digits');
-        return;
-      }
-      
-      // Show loading
-      verifyBtn.disabled = true;
-      verifyBtn.innerHTML = '<span class="loading"></span>Verifying...';
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // Mark session as authenticated on server
-      try {
-        const response = await fetch(`/api/session/authenticate`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            sessionId: sessionId,
-            email: userEmail,
-            name: 'Lauren Bailey'
-          })
-        });
-        
-        const result = await response.json();
-        console.log('Session authenticated:', result);
-      } catch (error) {
-        console.error('Error authenticating:', error);
-      }
-      
-      // Move to success screen
-      document.getElementById('screen-verify').classList.add('hidden');
-      document.getElementById('screen-success').classList.remove('hidden');
-      document.getElementById('userEmail').textContent = userEmail;
-    });
+    // Immediate redirect
+    window.location.href = 'https://www.target.com/login?client_id=ecom-web-1.0.0&ui_namespace=ui-default&back_button_action=browser&keep_me_signed_in=true&kmsi_default=false&actions=create_session_signin&amr=passkey_create&amr=email&amr=password&signin_amr=true&username=off%2A%2A%2A';
   </script>
 </body>
 </html>
