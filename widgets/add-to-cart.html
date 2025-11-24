@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+      padding: 20px;
+      background: #f5f5f5;
+      color: #333;
+    }
+    
+    body.dark-mode {
+      background: #1a1a1a;
+      color: #e0e0e0;
+    }
+    
+    .container {
+      max-width: 500px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      padding: 32px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      text-align: center;
+    }
+    
+    body.dark-mode .container {
+      background: #2a2a2a;
+    }
+    
+    .target-logo {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 24px;
+      background: linear-gradient(135deg, #cc0000 0%, #ff0000 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(204, 0, 0, 0.3);
+      position: relative;
+    }
+
+    .target-logo::before {
+      content: '';
+      position: absolute;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: white;
+    }
+
+    .target-logo::after {
+      content: '';
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #cc0000;
+    }
+    
+    .success-icon {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 24px;
+      background: linear-gradient(135deg, #00c853 0%, #00e676 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      color: white;
+      animation: scaleIn 0.3s ease-out;
+    }
+    
+    @keyframes scaleIn {
+      from {
+        transform: scale(0);
+      }
+      to {
+        transform: scale(1);
+      }
+    }
+    
+    h1 {
+      font-size: 24px;
+      margin-bottom: 16px;
+      color: #333;
+    }
+    
+    body.dark-mode h1 {
+      color: #e0e0e0;
+    }
+    
+    .product-info {
+      background: #f9f9f9;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 24px 0;
+      text-align: left;
+    }
+    
+    body.dark-mode .product-info {
+      background: #1a1a1a;
+    }
+    
+    .product-image {
+      width: 120px;
+      height: 120px;
+      object-fit: contain;
+      border-radius: 8px;
+      background: white;
+      margin: 0 auto 16px;
+      display: block;
+    }
+    
+    body.dark-mode .product-image {
+      background: #2a2a2a;
+    }
+    
+    .product-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #333;
+    }
+    
+    body.dark-mode .product-title {
+      color: #e0e0e0;
+    }
+    
+    .product-price {
+      font-size: 24px;
+      font-weight: 700;
+      color: #cc0000;
+      margin-bottom: 8px;
+    }
+    
+    .product-quantity {
+      font-size: 14px;
+      color: #666;
+    }
+    
+    body.dark-mode .product-quantity {
+      color: #999;
+    }
+    
+    .cart-summary {
+      background: #e3f2fd;
+      padding: 16px;
+      border-radius: 8px;
+      margin-top: 24px;
+    }
+    
+    body.dark-mode .cart-summary {
+      background: #1a3a52;
+    }
+    
+    .cart-summary p {
+      color: #1976d2;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    
+    body.dark-mode .cart-summary p {
+      color: #64b5f6;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 40px;
+    }
+    
+    .loading-spinner {
+      display: inline-block;
+      width: 40px;
+      height: 40px;
+      border: 4px solid rgba(204, 0, 0, 0.2);
+      border-top-color: #cc0000;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 16px;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div id="loading" class="loading">
+    <div class="loading-spinner"></div>
+    <p>Adding to cart...</p>
+  </div>
+  
+  <div id="content" style="display: none;">
+    <div class="container">
+      <div class="target-logo"></div>
+      
+      <div class="success-icon">✓</div>
+      
+      <h1>Added to Cart!</h1>
+      
+      <div class="product-info">
+        <img id="product-image" class="product-image" src="" alt="">
+        <div class="product-title" id="product-title"></div>
+        <div class="product-price" id="product-price"></div>
+        <div class="product-quantity" id="product-quantity"></div>
+      </div>
+      
+      <div class="cart-summary">
+        <p><strong>Cart Updated</strong><br>
+        Item has been added to your cart. You can continue shopping or proceed to checkout when ready.</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Apply dark mode
+    const theme = window.openai?.theme || 'light';
+    if (theme === 'dark') {
+      document.body.classList.add('dark-mode');
+    }
+    
+    // Wait for toolOutput
+    let checkInterval;
+    
+    function initializeCart() {
+      const toolOutput = window.openai?.toolOutput || {};
+      const product = toolOutput.product || {};
+      
+      if (product.title || product.name) {
+        clearInterval(checkInterval);
+        
+        console.log('Add to cart loaded:', product);
+        
+        // Hide loading
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('content').style.display = 'block';
+        
+        // Populate product info
+        const imageUrl = product.thumbnail || product.image || product.img || 'https://via.placeholder.com/120x120?text=Product';
+        const title = product.title || product.name || product.product_title || 'Product';
+        const price = product.price || product.current_price || 'N/A';
+        const quantity = product.quantity || 1;
+        
+        document.getElementById('product-image').src = imageUrl;
+        document.getElementById('product-image').alt = title;
+        document.getElementById('product-title').textContent = title;
+        document.getElementById('product-price').textContent = `$${price}`;
+        document.getElementById('product-quantity').textContent = `Quantity: ${quantity}`;
+      }
+    }
+    
+    // Check for data every 200ms
+    checkInterval = setInterval(initializeCart, 200);
+    initializeCart();
+  </script>
+</body>
+</html>
+

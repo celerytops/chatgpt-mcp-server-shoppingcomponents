@@ -646,17 +646,250 @@ function createMcp2Server() {
   return server;
 }
 
+/**
+ * Create MCP Server 3 (Checkout & Cart)
+ */
+function createMcp3Server() {
+  // Widgets for MCP3
+  const addToCartWidget = {
+    id: 'add-to-cart',
+    title: 'Add to Cart',
+    templateUri: 'ui://widget/add-to-cart.html',
+    invoking: 'Adding to cart',
+    invoked: 'Added to cart',
+    html: readWidgetHtml('add-to-cart'),
+    responseText: 'Item has been added to your cart.'
+  };
+  
+  const checkoutWidget = {
+    id: 'checkout',
+    title: 'Checkout',
+    templateUri: 'ui://widget/checkout.html',
+    invoking: 'Preparing checkout',
+    invoked: 'Checkout ready',
+    html: readWidgetHtml('checkout'),
+    responseText: 'Checkout is ready. Please review and complete your purchase.'
+  };
+
+  const server = new Server(
+    {
+      name: 'target-checkout',
+      version: '1.0.0'
+    },
+    {
+      capabilities: {
+        resources: {},
+        tools: {}
+      }
+    }
+  );
+
+  // List resources
+  server.setRequestHandler(
+    ListResourcesRequestSchema,
+    async (_request) => ({
+      resources: [
+        {
+          uri: addToCartWidget.templateUri,
+          name: addToCartWidget.title,
+          description: `${addToCartWidget.title} widget markup`,
+          mimeType: 'text/html+skybridge',
+          _meta: widgetDescriptorMeta(addToCartWidget)
+        },
+        {
+          uri: checkoutWidget.templateUri,
+          name: checkoutWidget.title,
+          description: `${checkoutWidget.title} widget markup`,
+          mimeType: 'text/html+skybridge',
+          _meta: widgetDescriptorMeta(checkoutWidget)
+        }
+      ]
+    })
+  );
+
+  // Read resource
+  server.setRequestHandler(
+    ReadResourceRequestSchema,
+    async (request) => {
+      const uri = request.params.uri;
+      if (uri === addToCartWidget.templateUri) {
+        return {
+          contents: [
+            {
+              uri: addToCartWidget.templateUri,
+              mimeType: 'text/html+skybridge',
+              text: addToCartWidget.html
+            }
+          ]
+        };
+      }
+      if (uri === checkoutWidget.templateUri) {
+        return {
+          contents: [
+            {
+              uri: checkoutWidget.templateUri,
+              mimeType: 'text/html+skybridge',
+              text: checkoutWidget.html
+            }
+          ]
+        };
+      }
+      throw new Error(`Unknown resource: ${uri}`);
+    }
+  );
+
+  // List resource templates
+  server.setRequestHandler(
+    ListResourceTemplatesRequestSchema,
+    async (_request) => ({ resourceTemplates: [] })
+  );
+
+  // List tools
+  server.setRequestHandler(
+    ListToolsRequestSchema,
+    async (_request) => ({
+      tools: [
+        {
+          name: addToCartWidget.id,
+          description: 'Add a product to the shopping cart. Shows a confirmation that the item has been added. Use when customer wants to add items to cart.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              product: {
+                type: 'object',
+                description: 'Product information including title, price, image, etc.',
+                properties: {
+                  title: { type: 'string' },
+                  price: { type: 'string' },
+                  image: { type: 'string' },
+                  quantity: { type: 'number', default: 1 }
+                }
+              }
+            },
+            required: ['product']
+          },
+          _meta: widgetDescriptorMeta(addToCartWidget)
+        },
+        {
+          name: checkoutWidget.id,
+          description: 'Show checkout page with cart items, pre-filled shipping address and payment method. Customer can review and complete purchase. Use when customer wants to checkout.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              cart_items: {
+                type: 'array',
+                description: 'Array of cart items to checkout',
+                items: {
+                  type: 'object'
+                }
+              }
+            },
+            required: []
+          },
+          _meta: widgetDescriptorMeta(checkoutWidget)
+        }
+      ]
+    })
+  );
+
+  // Call tool
+  server.setRequestHandler(
+    CallToolRequestSchema,
+    async (request) => {
+      try {
+        // Handle add-to-cart
+        if (request.params.name === addToCartWidget.id) {
+          const args = request.params.arguments || {};
+          const product = args.product || {};
+          
+          if (!product.title && !product.name) {
+            throw new Error('Product information is required');
+          }
+          
+          console.log(`MCP3: Adding to cart:`, product);
+          
+          // Add to cart storage
+          const cartKey = 'user_cart'; // In real app, would be per-user
+          if (!cartStorage.has(cartKey)) {
+            cartStorage.set(cartKey, []);
+          }
+          const cart = cartStorage.get(cartKey);
+          cart.push(product);
+          cartStorage.set(cartKey, cart);
+          
+          console.log(`MCP3: Cart now has ${cart.length} items`);
+          
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Added "${product.title || product.name}" to cart. Cart now has ${cart.length} item(s).`
+              }
+            ],
+            structuredContent: {
+              product: product,
+              cart_count: cart.length
+            },
+            _meta: widgetInvocationMeta(addToCartWidget)
+          };
+        }
+        
+        // Handle checkout
+        if (request.params.name === checkoutWidget.id) {
+          const args = request.params.arguments || {};
+          let cartItems = args.cart_items || [];
+          
+          // If no items provided, get from cart storage
+          if (cartItems.length === 0) {
+            const cartKey = 'user_cart';
+            cartItems = cartStorage.get(cartKey) || [];
+          }
+          
+          console.log(`MCP3: Showing checkout with ${cartItems.length} items`);
+          
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Checkout ready with ${cartItems.length} item(s). Review your order and complete purchase above.`
+              }
+            ],
+            structuredContent: {
+              cart_items: cartItems,
+              initialized: true
+            },
+            _meta: widgetInvocationMeta(checkoutWidget)
+          };
+        }
+        
+        throw new Error(`Unknown tool: ${request.params.name}`);
+      } catch (error) {
+        console.error(`Error in MCP3 tool ${request.params.name}:`, error);
+        throw error;
+      }
+    }
+  );
+
+  return server;
+}
+
 // Session management for SSE connections
 const sseConnections = new Map();
 const sseConnections2 = new Map(); // For MCP2
+const sseConnections3 = new Map(); // For MCP3
 
 // Authentication session tracking
 const authSessions = new Map(); // sessionId -> { authenticated: boolean, email: string, name: string }
+
+// Cart storage (in-memory)
+const cartStorage = new Map(); // cartKey -> array of products
 
 const ssePath = '/mcp';
 const postPath = '/mcp/messages';
 const ssePath2 = '/mcp2';
 const postPath2 = '/mcp2/messages';
+const ssePath3 = '/mcp3';
+const postPath3 = '/mcp3/messages';
 
 // Handle SSE request
 async function handleSseRequest(res) {
@@ -774,6 +1007,63 @@ async function handlePostMessage2(req, res, url) {
   }
 }
 
+// Handle SSE request for MCP3
+async function handleSseRequest3(res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  const server = createMcp3Server();
+  const transport = new SSEServerTransport(postPath3, res);
+  const sessionId = transport.sessionId;
+
+  sseConnections3.set(sessionId, { server, transport });
+
+  transport.onclose = async () => {
+    sseConnections3.delete(sessionId);
+  };
+
+  transport.onerror = (error) => {
+    console.error('MCP3 SSE transport error', error);
+  };
+
+  try {
+    await server.connect(transport);
+    console.log(`✓ MCP3 SSE session ${sessionId} connected`);
+  } catch (error) {
+    sseConnections3.delete(sessionId);
+    console.error('✗ Failed to start MCP3 SSE session:', error.message, error.stack);
+    if (!res.headersSent) {
+      res.writeHead(500).end('Failed to establish SSE connection');
+    }
+  }
+}
+
+// Handle POST message for MCP3
+async function handlePostMessage3(req, res, url) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Headers', 'content-type');
+  const sessionId = url.searchParams.get('sessionId');
+
+  if (!sessionId) {
+    res.writeHead(400).end('Missing sessionId query parameter');
+    return;
+  }
+
+  const connection = sseConnections3.get(sessionId);
+
+  if (!connection) {
+    res.writeHead(404).end('Unknown session');
+    return;
+  }
+
+  try {
+    await connection.transport.handlePostMessage(req, res);
+  } catch (error) {
+    console.error('Failed to process MCP3 message', error);
+    if (!res.headersSent) {
+      res.writeHead(500).end('Failed to process message');
+    }
+  }
+}
+
 // Server setup
 const portEnv = Number(process.env.PORT ?? 8000);
 const port = Number.isFinite(portEnv) ? portEnv : 8000;
@@ -809,6 +1099,17 @@ const httpServer = createServer(
       return;
     }
 
+    // CORS preflight (MCP 3)
+    if (req.method === 'OPTIONS' && url.pathname === postPath3) {
+      res.writeHead(204, {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'content-type'
+      });
+      res.end();
+      return;
+    }
+
     // Root endpoint
     if (req.method === 'GET' && (url.pathname === '/' || url.pathname === '')) {
       res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -831,6 +1132,14 @@ const httpServer = createServer(
             endpoints: {
               mcp: ssePath2,
               messages: postPath2
+            }
+          },
+          mcp3: {
+            name: 'Target Checkout',
+            description: 'Add items to cart and complete checkout with pre-filled payment and shipping',
+            endpoints: {
+              mcp: ssePath3,
+              messages: postPath3
             }
           }
         },
@@ -1135,6 +1444,18 @@ const httpServer = createServer(
     // POST messages endpoint (MCP 2)
     if (req.method === 'POST' && url.pathname === postPath2) {
       await handlePostMessage2(req, res, url);
+      return;
+    }
+
+    // SSE endpoint (MCP 3)
+    if (req.method === 'GET' && url.pathname === ssePath3) {
+      await handleSseRequest3(res);
+      return;
+    }
+
+    // POST messages endpoint (MCP 3)
+    if (req.method === 'POST' && url.pathname === postPath3) {
+      await handlePostMessage3(req, res, url);
       return;
     }
 
