@@ -225,17 +225,14 @@ function createPizzazServer() {
           console.log(`✓ Created new auth session: ${sessionId}`);
           console.log(`  Total auth sessions: ${authSessions.size}`);
           
-          // Auto-authenticate after 10 seconds (demo mode - simulates user logging in)
-          setTimeout(() => {
-            const session = authSessions.get(sessionId);
-            if (session && !session.authenticated) {
-              session.authenticated = true;
-              session.email = 'laurenbailey@gmail.com';
-              session.name = 'Lauren Bailey';
-              authSessions.set(sessionId, session);
-              console.log(`Session ${sessionId} auto-authenticated (demo mode)`);
+          // Clean up old sessions (older than 10 minutes)
+          const tenMinutesAgo = Date.now() - (10 * 60 * 1000);
+          for (const [sid, sess] of authSessions.entries()) {
+            if (sess.createdAt < tenMinutesAgo) {
+              authSessions.delete(sid);
+              console.log(`  Cleaned up old session: ${sid}`);
             }
-          }, 10000); // 10 seconds
+          }
           
           return {
             content: [
