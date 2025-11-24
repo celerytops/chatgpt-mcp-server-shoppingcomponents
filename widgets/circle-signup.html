@@ -366,6 +366,17 @@
       text-align: center;
       padding: 40px 20px;
       position: relative;
+      overflow: hidden;
+    }
+    
+    #confetti-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1000;
     }
     
     .confetti {
@@ -373,12 +384,46 @@
       width: 10px;
       height: 10px;
       background: #cc0000;
-      animation: confetti-fall 3s ease-out forwards;
     }
     
-    @keyframes confetti-fall {
-      to {
-        transform: translateY(400px) rotate(360deg);
+    .confetti-left {
+      bottom: 0;
+      left: 0;
+      animation: confetti-spray-left 2.5s ease-out forwards;
+    }
+    
+    .confetti-right {
+      bottom: 0;
+      right: 0;
+      animation: confetti-spray-right 2.5s ease-out forwards;
+    }
+    
+    @keyframes confetti-spray-left {
+      0% {
+        transform: translate(0, 0) rotate(0deg);
+        opacity: 1;
+      }
+      40% {
+        transform: translate(200px, -400px) rotate(180deg);
+        opacity: 1;
+      }
+      100% {
+        transform: translate(250px, 600px) rotate(720deg);
+        opacity: 0;
+      }
+    }
+    
+    @keyframes confetti-spray-right {
+      0% {
+        transform: translate(0, 0) rotate(0deg);
+        opacity: 1;
+      }
+      40% {
+        transform: translate(-200px, -400px) rotate(-180deg);
+        opacity: 1;
+      }
+      100% {
+        transform: translate(-250px, 600px) rotate(-720deg);
         opacity: 0;
       }
     }
@@ -395,6 +440,8 @@
       font-size: 64px;
       color: white;
       animation: scaleIn 0.5s ease-out;
+      position: relative;
+      z-index: 1001;
     }
     
     @keyframes scaleIn {
@@ -663,17 +710,29 @@
       document.getElementById('processing-content').style.display = 'none';
       document.getElementById('success-content').style.display = 'block';
       
-      // Generate confetti
+      // Generate confetti from bottom left and right
       const container = document.getElementById('confetti-container');
       const colors = ['#cc0000', '#ff0000', '#4a148c', '#00c853', '#ffa500'];
       
-      for (let i = 0; i < 50; i++) {
+      // Create 25 confetti from left side
+      for (let i = 0; i < 25; i++) {
         const confetti = document.createElement('div');
-        confetti.className = 'confetti';
-        confetti.style.left = Math.random() * 100 + '%';
+        confetti.className = 'confetti confetti-left';
         confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-        confetti.style.animationDelay = Math.random() * 0.5 + 's';
-        confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
+        confetti.style.animationDelay = Math.random() * 0.3 + 's';
+        confetti.style.width = (Math.random() * 6 + 6) + 'px';
+        confetti.style.height = confetti.style.width;
+        container.appendChild(confetti);
+      }
+      
+      // Create 25 confetti from right side
+      for (let i = 0; i < 25; i++) {
+        const confetti = document.createElement('div');
+        confetti.className = 'confetti confetti-right';
+        confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        confetti.style.animationDelay = Math.random() * 0.3 + 's';
+        confetti.style.width = (Math.random() * 6 + 6) + 'px';
+        confetti.style.height = confetti.style.width;
         container.appendChild(confetti);
       }
       
