@@ -879,7 +879,7 @@ function createMcp3Server() {
 function createMcp4Server() {
   // Widget for MCP4
   const signupWidget = {
-    id: 'circle-360-signup',
+    id: 'circle-signup',
     title: 'Circle 360 Signup',
     templateUri: 'ui://widget/circle-signup.html',
     invoking: 'Circle 360 coming right up',
