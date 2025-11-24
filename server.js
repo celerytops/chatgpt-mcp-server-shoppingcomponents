@@ -341,14 +341,147 @@ function createPizzazServer() {
   return server;
 }
 
+/**
+ * Create MCP Server 2 (Example)
+ */
+function createMcp2Server() {
+  // Widget for MCP2
+  const mcp2Widget = {
+    id: 'example-mcp2-tool',
+    title: 'MCP2 Example Tool',
+    templateUri: 'ui://widget/example-mcp2.html',
+    invoking: 'Loading MCP2 widget',
+    invoked: 'MCP2 widget ready',
+    html: readWidgetHtml('example-mcp2'),
+    responseText: 'This is an example tool from MCP Server 2.'
+  };
+
+  const server = new Server(
+    {
+      name: 'mcp2-example',
+      version: '1.0.0'
+    },
+    {
+      capabilities: {
+        resources: {},
+        tools: {}
+      }
+    }
+  );
+
+  // List resources
+  server.setRequestHandler(
+    ListResourcesRequestSchema,
+    async (_request) => ({
+      resources: [
+        {
+          uri: mcp2Widget.templateUri,
+          name: mcp2Widget.title,
+          description: `${mcp2Widget.title} widget markup`,
+          mimeType: 'text/html+skybridge',
+          _meta: widgetDescriptorMeta(mcp2Widget)
+        }
+      ]
+    })
+  );
+
+  // Read resource
+  server.setRequestHandler(
+    ReadResourceRequestSchema,
+    async (request) => {
+      const uri = request.params.uri;
+      if (uri === mcp2Widget.templateUri) {
+        return {
+          contents: [
+            {
+              uri: mcp2Widget.templateUri,
+              mimeType: 'text/html+skybridge',
+              text: mcp2Widget.html
+            }
+          ]
+        };
+      }
+      throw new Error(`Unknown resource: ${uri}`);
+    }
+  );
+
+  // List resource templates
+  server.setRequestHandler(
+    ListResourceTemplatesRequestSchema,
+    async (_request) => ({ resourceTemplates: [] })
+  );
+
+  // List tools
+  server.setRequestHandler(
+    ListToolsRequestSchema,
+    async (_request) => ({
+      tools: [
+        {
+          name: mcp2Widget.id,
+          description: 'Show MCP2 example widget with custom message',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              message: {
+                type: 'string',
+                description: 'Custom message to display in the widget'
+              }
+            },
+            required: []
+          },
+          _meta: widgetDescriptorMeta(mcp2Widget)
+        }
+      ]
+    })
+  );
+
+  // Call tool
+  server.setRequestHandler(
+    CallToolRequestSchema,
+    async (request) => {
+      try {
+        if (request.params.name === mcp2Widget.id) {
+          const args = request.params.arguments || {};
+          const message = args.message || 'Hello from MCP Server 2!';
+          
+          console.log(`MCP2: Showing widget with message: ${message}`);
+          
+          return {
+            content: [
+              {
+                type: 'text',
+                text: mcp2Widget.responseText
+              }
+            ],
+            structuredContent: {
+              message: message
+            },
+            _meta: widgetInvocationMeta(mcp2Widget)
+          };
+        }
+        
+        throw new Error(`Unknown tool: ${request.params.name}`);
+      } catch (error) {
+        console.error(`Error in MCP2 tool ${request.params.name}:`, error);
+        throw error;
+      }
+    }
+  );
+
+  return server;
+}
+
 // Session management for SSE connections
 const sseConnections = new Map();
+const sseConnections2 = new Map(); // For MCP2
 
 // Authentication session tracking
 const authSessions = new Map(); // sessionId -> { authenticated: boolean, email: string, name: string }
 
 const ssePath = '/mcp';
 const postPath = '/mcp/messages';
+const ssePath2 = '/mcp2';
+const postPath2 = '/mcp2/messages';
 
 // Handle SSE request
 async function handleSseRequest(res) {
@@ -409,6 +542,63 @@ async function handlePostMessage(req, res, url) {
   }
 }
 
+// Handle SSE request for MCP2
+async function handleSseRequest2(res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  const server = createMcp2Server();
+  const transport = new SSEServerTransport(postPath2, res);
+  const sessionId = transport.sessionId;
+
+  sseConnections2.set(sessionId, { server, transport });
+
+  transport.onclose = async () => {
+    sseConnections2.delete(sessionId);
+  };
+
+  transport.onerror = (error) => {
+    console.error('MCP2 SSE transport error', error);
+  };
+
+  try {
+    await server.connect(transport);
+    console.log(`✓ MCP2 SSE session ${sessionId} connected`);
+  } catch (error) {
+    sseConnections2.delete(sessionId);
+    console.error('✗ Failed to start MCP2 SSE session:', error.message, error.stack);
+    if (!res.headersSent) {
+      res.writeHead(500).end('Failed to establish SSE connection');
+    }
+  }
+}
+
+// Handle POST message for MCP2
+async function handlePostMessage2(req, res, url) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Headers', 'content-type');
+  const sessionId = url.searchParams.get('sessionId');
+
+  if (!sessionId) {
+    res.writeHead(400).end('Missing sessionId query parameter');
+    return;
+  }
+
+  const connection = sseConnections2.get(sessionId);
+
+  if (!connection) {
+    res.writeHead(404).end('Unknown session');
+    return;
+  }
+
+  try {
+    await connection.transport.handlePostMessage(req, res);
+  } catch (error) {
+    console.error('Failed to process MCP2 message', error);
+    if (!res.headersSent) {
+      res.writeHead(500).end('Failed to process message');
+    }
+  }
+}
+
 // Server setup
 const portEnv = Number(process.env.PORT ?? 8000);
 const port = Number.isFinite(portEnv) ? portEnv : 8000;
@@ -422,8 +612,19 @@ const httpServer = createServer(
 
     const url = new URL(req.url, `http://${req.headers.host ?? 'localhost'}`);
 
-    // CORS preflight
+    // CORS preflight (MCP 1)
     if (req.method === 'OPTIONS' && url.pathname === postPath) {
+      res.writeHead(204, {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'content-type'
+      });
+      res.end();
+      return;
+    }
+
+    // CORS preflight (MCP 2)
+    if (req.method === 'OPTIONS' && url.pathname === postPath2) {
       res.writeHead(204, {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -437,13 +638,31 @@ const httpServer = createServer(
     if (req.method === 'GET' && (url.pathname === '/' || url.pathname === '')) {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({
-        name: 'Target Authentication MCP Server',
+        name: 'Multi-MCP Server',
         version: '1.0.0',
-        description: 'Target customer authentication component for ChatGPT',
-        endpoints: {
-          mcp: ssePath,
-          messages: postPath,
-          openapi: '/openapi.json'
+        description: 'Multiple MCP servers on one Heroku app',
+        servers: {
+          mcp1: {
+            name: 'Target Authentication',
+            description: 'Target customer authentication component',
+            endpoints: {
+              mcp: ssePath,
+              messages: postPath
+            }
+          },
+          mcp2: {
+            name: 'MCP2 Example',
+            description: 'Second MCP server for testing',
+            endpoints: {
+              mcp: ssePath2,
+              messages: postPath2
+            }
+          }
+        },
+        otherEndpoints: {
+          openapi: '/openapi.json',
+          privacy: '/privacy',
+          auth: '/auth'
         }
       }));
       return;
@@ -720,15 +939,27 @@ const httpServer = createServer(
       return;
     }
 
-    // SSE endpoint
+    // SSE endpoint (MCP 1)
     if (req.method === 'GET' && url.pathname === ssePath) {
       await handleSseRequest(res);
       return;
     }
 
-    // POST messages endpoint (SSE only, no stateless)
+    // POST messages endpoint (MCP 1)
     if (req.method === 'POST' && url.pathname === postPath) {
       await handlePostMessage(req, res, url);
+      return;
+    }
+
+    // SSE endpoint (MCP 2)
+    if (req.method === 'GET' && url.pathname === ssePath2) {
+      await handleSseRequest2(res);
+      return;
+    }
+
+    // POST messages endpoint (MCP 2)
+    if (req.method === 'POST' && url.pathname === postPath2) {
+      await handlePostMessage2(req, res, url);
       return;
     }
 
