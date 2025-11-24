@@ -303,22 +303,6 @@
     .success-screen {
       text-align: center;
       padding: 40px 20px;
-      position: relative;
-    }
-    
-    .confetti {
-      position: absolute;
-      width: 10px;
-      height: 10px;
-      background: #cc0000;
-      animation: confetti-fall 3s ease-out forwards;
-    }
-    
-    @keyframes confetti-fall {
-      to {
-        transform: translateY(400px) rotate(360deg);
-        opacity: 0;
-      }
     }
     
     .success-icon {
@@ -494,7 +478,6 @@
   <div id="success-content" style="display: none;">
     <div class="container">
       <div class="section success-screen">
-        <div id="confetti-container"></div>
         <div class="success-icon">✓</div>
         <div class="success-title">Welcome to Circle 360!</div>
         <div class="success-message">You're set to enjoy all the benefits of Circle 360</div>
@@ -578,23 +561,9 @@
       // Simulate processing
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Show success with confetti
+      // Show success
       document.getElementById('signup-content').style.display = 'none';
       document.getElementById('success-content').style.display = 'block';
-      
-      // Generate confetti
-      const container = document.getElementById('confetti-container');
-      const colors = ['#cc0000', '#ff0000', '#4a148c', '#00c853', '#ffa500'];
-      
-      for (let i = 0; i < 50; i++) {
-        const confetti = document.createElement('div');
-        confetti.className = 'confetti';
-        confetti.style.left = Math.random() * 100 + '%';
-        confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-        confetti.style.animationDelay = Math.random() * 0.5 + 's';
-        confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
-        container.appendChild(confetti);
-      }
     }
     
     // Check for data every 200ms
