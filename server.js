@@ -1061,6 +1061,14 @@ const authSessions = new Map(); // sessionId -> { authenticated: boolean, email:
 // Cart storage (in-memory)
 const cartStorage = new Map(); // cartKey -> array of products
 
+// Function to reset all demo state
+function resetDemoState() {
+  console.log('🔄 Resetting demo state...');
+  authSessions.clear();
+  cartStorage.clear();
+  console.log('✅ Demo state reset complete');
+}
+
 const ssePath = '/mcp';
 const postPath = '/mcp/messages';
 const ssePath2 = '/mcp2';
@@ -1608,6 +1616,19 @@ const httpServer = createServer(
       return;
     }
 
+    // Reset demo state endpoint (for Circle 360 signup completion)
+    if (req.method === 'POST' && url.pathname === '/api/demo/reset') {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Headers', 'content-type');
+      res.setHeader('Content-Type', 'application/json');
+      
+      resetDemoState();
+      
+      res.writeHead(200);
+      res.end(JSON.stringify({ success: true, message: 'Demo state reset' }));
+      return;
+    }
+
     // Session authentication endpoint (for widget to mark session as authenticated)
     if (req.method === 'POST' && url.pathname === '/api/session/authenticate') {
       res.setHeader('Access-Control-Allow-Origin', '*');
@@ -1657,7 +1678,7 @@ const httpServer = createServer(
     }
 
     // CORS preflight for session endpoint
-    if (req.method === 'OPTIONS' && url.pathname === '/api/session/authenticate') {
+    if (req.method === 'OPTIONS' && (url.pathname === '/api/session/authenticate' || url.pathname === '/api/demo/reset')) {
       res.writeHead(204, {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'POST, OPTIONS',

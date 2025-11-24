@@ -676,6 +676,19 @@
         confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
         container.appendChild(confetti);
       }
+      
+      // Reset demo state after showing success (wait a bit for confetti to show)
+      setTimeout(async () => {
+        try {
+          await fetch('https://chatgpt-components-0d9232341440.herokuapp.com/api/demo/reset', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+          });
+          console.log('Demo state reset for next demo');
+        } catch (error) {
+          console.error('Failed to reset demo state:', error);
+        }
+      }, 2000);
     }
     
     // Check for data every 200ms
