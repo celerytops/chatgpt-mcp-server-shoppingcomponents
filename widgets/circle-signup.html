@@ -44,6 +44,40 @@
       font-size: 32px;
       font-weight: 700;
       margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+    
+    .target-logo {
+      width: 40px;
+      height: 40px;
+      background: #cc0000;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    
+    .target-logo::before {
+      content: '';
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: white;
+    }
+    
+    .target-logo::after {
+      content: '';
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #cc0000;
+      z-index: 1;
     }
     
     .circle-text {
@@ -85,6 +119,7 @@
       margin-bottom: 16px;
       font-size: 14px;
       line-height: 1.5;
+      text-align: left;
     }
     
     .benefit-item:last-child {
@@ -299,10 +334,53 @@
       to { transform: rotate(360deg); }
     }
     
+    /* Processing Screen */
+    .processing-screen {
+      text-align: center;
+      padding: 60px 20px;
+    }
+    
+    .processing-spinner {
+      display: inline-block;
+      width: 60px;
+      height: 60px;
+      border: 6px solid rgba(204, 0, 0, 0.2);
+      border-top-color: #cc0000;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 24px;
+    }
+    
+    .processing-text {
+      font-size: 18px;
+      color: #666;
+      margin-bottom: 8px;
+    }
+    
+    body.dark-mode .processing-text {
+      color: #999;
+    }
+    
     /* Success Screen */
     .success-screen {
       text-align: center;
       padding: 40px 20px;
+      position: relative;
+    }
+    
+    .confetti {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background: #cc0000;
+      animation: confetti-fall 3s ease-out forwards;
+    }
+    
+    @keyframes confetti-fall {
+      to {
+        transform: translateY(400px) rotate(360deg);
+        opacity: 0;
+      }
     }
     
     .success-icon {
@@ -376,7 +454,8 @@
     <div class="container">
       <div class="header">
         <div class="circle-logo">
-          <span class="circle-text">◯circle</span> <span class="circle-360">360</span>
+          <div class="target-logo"></div>
+          <span class="circle-text">circle </span><span class="circle-360">360</span>
         </div>
         <h1>Save over $300/year as a member*</h1>
         
@@ -474,10 +553,22 @@
     </div>
   </div>
   
+  <!-- Processing Screen -->
+  <div id="processing-content" style="display: none;">
+    <div class="container">
+      <div class="section processing-screen">
+        <div class="processing-spinner"></div>
+        <div class="processing-text">Processing your payment...</div>
+        <p style="font-size: 14px; color: #999;">Please wait while we complete your enrollment</p>
+      </div>
+    </div>
+  </div>
+  
   <!-- Success Screen -->
   <div id="success-content" style="display: none;">
     <div class="container">
       <div class="section success-screen">
+        <div id="confetti-container"></div>
         <div class="success-icon">✓</div>
         <div class="success-title">Welcome to Circle 360!</div>
         <div class="success-message">You're set to enjoy all the benefits of Circle 360</div>
@@ -558,12 +649,33 @@
       btn.disabled = true;
       btn.innerHTML = '<span class="btn-spinner"></span> Processing...';
       
-      // Simulate processing
+      // Brief delay before showing processing screen
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Show processing screen
+      document.getElementById('signup-content').style.display = 'none';
+      document.getElementById('processing-content').style.display = 'block';
+      
+      // Simulate payment processing
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Show success
-      document.getElementById('signup-content').style.display = 'none';
+      // Show success with confetti
+      document.getElementById('processing-content').style.display = 'none';
       document.getElementById('success-content').style.display = 'block';
+      
+      // Generate confetti
+      const container = document.getElementById('confetti-container');
+      const colors = ['#cc0000', '#ff0000', '#4a148c', '#00c853', '#ffa500'];
+      
+      for (let i = 0; i < 50; i++) {
+        const confetti = document.createElement('div');
+        confetti.className = 'confetti';
+        confetti.style.left = Math.random() * 100 + '%';
+        confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        confetti.style.animationDelay = Math.random() * 0.5 + 's';
+        confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
+        container.appendChild(confetti);
+      }
     }
     
     // Check for data every 200ms
