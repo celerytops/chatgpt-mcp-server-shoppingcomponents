@@ -498,7 +498,7 @@
         const title = product.title || product.name || product.product_title || 'Product';
         const price = product.price || product.current_price || 'N/A';
         const rating = product.rating || product.stars || 0;
-        const reviewCount = product.reviews_count || product.reviews || 0;
+        const reviewCount = product.reviews_count || product.reviews || product.review_count || product.number_of_reviews || 0;
         
         card.innerHTML = `
           <img src="${imageUrl}" alt="${title}" class="product-image" onerror="this.src='https://via.placeholder.com/280x200?text=No+Image'">
@@ -507,7 +507,7 @@
           ${rating > 0 ? `
             <div class="product-rating">
               <span class="stars">${'★'.repeat(Math.round(rating))}${'☆'.repeat(5 - Math.round(rating))}</span>
-              <span>(${reviewCount} reviews)</span>
+              ${reviewCount > 0 ? `<span>(${reviewCount} reviews)</span>` : ''}
             </div>
           ` : ''}
         `;
@@ -532,7 +532,7 @@
       const title = product.title || product.name || product.product_title || 'Product';
       const price = product.price || product.current_price || 'N/A';
       const rating = product.rating || product.stars || 0;
-      const reviewCount = product.reviews_count || product.reviews || 0;
+      const reviewCount = product.reviews_count || product.reviews || product.review_count || product.number_of_reviews || 0;
       const description = product.description || product.features || 'No description available.';
       const productUrl = product.url || product.link || '#';
       
@@ -545,7 +545,7 @@
       if (rating > 0) {
         document.getElementById('detail-rating').innerHTML = `
           <span class="stars">${'★'.repeat(Math.round(rating))}${'☆'.repeat(5 - Math.round(rating))}</span>
-          <span>(${reviewCount} reviews)</span>
+          ${reviewCount > 0 ? `<span>(${reviewCount} reviews)</span>` : ''}
         `;
         document.getElementById('detail-rating').style.display = 'flex';
       } else {
