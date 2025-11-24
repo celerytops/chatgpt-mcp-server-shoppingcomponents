@@ -962,7 +962,6 @@ function createMcp4Server() {
             properties: {},
             required: []
           }
-          // NO widget, just returns data
         },
         {
           name: signupWidget.id,
