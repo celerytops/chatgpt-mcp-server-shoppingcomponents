@@ -812,22 +812,18 @@ function createMcp3Server() {
             quantity: 1
           });
           
-          // Add to cart storage
+          // Replace cart with only this one item (always keep cart at 1 item max)
           const cartKey = 'user_cart'; // In real app, would be per-user
-          if (!cartStorage.has(cartKey)) {
-            cartStorage.set(cartKey, []);
-          }
-          const cart = cartStorage.get(cartKey);
-          cart.push(product);
+          const cart = [product]; // Always replace with single item
           cartStorage.set(cartKey, cart);
           
-          console.log(`MCP3: Cart now has ${cart.length} items`);
+          console.log(`MCP3: Cart set to 1 item`);
           
           return {
             content: [
               {
                 type: 'text',
-                text: `Added "${product.title || product.name}" to cart. Cart now has ${cart.length} item(s).`
+                text: `Added "${product.title || product.name}" to cart.`
               }
             ],
             structuredContent: {

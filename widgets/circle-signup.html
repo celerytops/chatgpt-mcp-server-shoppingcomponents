@@ -368,64 +368,6 @@
       position: relative;
     }
     
-    #confetti-container {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      z-index: 1000;
-    }
-    
-    .confetti {
-      position: fixed;
-      width: 10px;
-      height: 10px;
-      background: #cc0000;
-      border-radius: 2px;
-    }
-    
-    .confetti-left {
-      bottom: -10px;
-      animation: confetti-spray-left 3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-    }
-    
-    .confetti-right {
-      bottom: -10px;
-      animation: confetti-spray-right 3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-    }
-    
-    @keyframes confetti-spray-left {
-      0% {
-        transform: translateY(0) translateX(0) rotate(0deg);
-        opacity: 1;
-      }
-      30% {
-        transform: translateY(-500px) translateX(150px) rotate(180deg);
-        opacity: 1;
-      }
-      100% {
-        transform: translateY(100vh) translateX(200px) rotate(720deg);
-        opacity: 0;
-      }
-    }
-    
-    @keyframes confetti-spray-right {
-      0% {
-        transform: translateY(0) translateX(0) rotate(0deg);
-        opacity: 1;
-      }
-      30% {
-        transform: translateY(-500px) translateX(-150px) rotate(-180deg);
-        opacity: 1;
-      }
-      100% {
-        transform: translateY(100vh) translateX(-200px) rotate(-720deg);
-        opacity: 0;
-      }
-    }
-    
     .success-icon {
       width: 100px;
       height: 100px;
@@ -609,9 +551,6 @@
     </div>
   </div>
   
-  <!-- Confetti Container (fixed position, outside of any overflow containers) -->
-  <div id="confetti-container"></div>
-  
   <!-- Success Screen -->
   <div id="success-content" style="display: none;">
     <div class="container">
@@ -706,41 +645,11 @@
       // Simulate payment processing
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Show success with confetti
+      // Show success
       document.getElementById('processing-content').style.display = 'none';
       document.getElementById('success-content').style.display = 'block';
       
-      // Generate confetti from bottom left and right corners
-      const container = document.getElementById('confetti-container');
-      const colors = ['#cc0000', '#ff0000', '#4a148c', '#00c853', '#ffa500'];
-      
-      // Create 25 confetti from left side (spread across left 20% of screen)
-      for (let i = 0; i < 25; i++) {
-        const confetti = document.createElement('div');
-        confetti.className = 'confetti confetti-left';
-        confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-        confetti.style.animationDelay = Math.random() * 0.4 + 's';
-        confetti.style.left = Math.random() * 20 + '%';
-        const size = Math.random() * 6 + 6;
-        confetti.style.width = size + 'px';
-        confetti.style.height = size + 'px';
-        container.appendChild(confetti);
-      }
-      
-      // Create 25 confetti from right side (spread across right 20% of screen)
-      for (let i = 0; i < 25; i++) {
-        const confetti = document.createElement('div');
-        confetti.className = 'confetti confetti-right';
-        confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-        confetti.style.animationDelay = Math.random() * 0.4 + 's';
-        confetti.style.right = Math.random() * 20 + '%';
-        const size = Math.random() * 6 + 6;
-        confetti.style.width = size + 'px';
-        confetti.style.height = size + 'px';
-        container.appendChild(confetti);
-      }
-      
-      // Reset demo state after showing success (wait a bit for confetti to show)
+      // Reset demo state after showing success
       setTimeout(async () => {
         try {
           await fetch('https://chatgpt-components-0d9232341440.herokuapp.com/api/demo/reset', {
