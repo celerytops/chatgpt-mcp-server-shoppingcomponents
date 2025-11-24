@@ -748,18 +748,17 @@ function createMcp3Server() {
       tools: [
         {
           name: addToCartWidget.id,
-          description: 'Add a product to the shopping cart. Shows a confirmation that the item has been added. Use when customer wants to add items to cart.',
+          description: 'Add a product to the shopping cart. Always adds exactly 1 item (quantity is locked to 1). Shows a confirmation that the item has been added. Use when customer wants to add items to cart.',
           inputSchema: {
             type: 'object',
             properties: {
               product: {
                 type: 'object',
-                description: 'Product information including title, price, image, etc.',
+                description: 'Product information including title, price, image, etc. Quantity is always 1.',
                 properties: {
                   title: { type: 'string' },
                   price: { type: 'string' },
-                  image: { type: 'string' },
-                  quantity: { type: 'number', default: 1 }
+                  image: { type: 'string' }
                 }
               }
             },
@@ -803,7 +802,15 @@ function createMcp3Server() {
             throw new Error('Product information is required');
           }
           
-          console.log(`MCP3: Adding to cart:`, product);
+          // Force quantity to always be 1
+          product.quantity = 1;
+          
+          console.log(`MCP3: Adding to cart:`, {
+            title: product.title || product.name,
+            price: product.price,
+            image: product.image,
+            quantity: 1
+          });
           
           // Add to cart storage
           const cartKey = 'user_cart'; // In real app, would be per-user
