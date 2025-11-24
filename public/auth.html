@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Customer Sign In</title>
+  <title>Secure Sign In</title>
   <style>
     * {
       margin: 0;
@@ -55,35 +55,18 @@
       margin-bottom: 32px;
     }
 
-    .target-logo {
+    .auth-icon {
       width: 64px;
       height: 64px;
       margin: 0 auto 16px;
-      background: linear-gradient(135deg, #cc0000 0%, #ff0000 100%);
-      border-radius: 50%;
+      background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+      border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 2px 8px rgba(204, 0, 0, 0.3);
-      position: relative;
-    }
-
-    .target-logo::before {
-      content: '';
-      position: absolute;
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      background: white;
-    }
-
-    .target-logo::after {
-      content: '';
-      position: absolute;
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      background: #cc0000;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      font-size: 32px;
+      color: white;
     }
 
     h1 {
@@ -121,13 +104,13 @@
 
     input:focus {
       outline: none;
-      border-color: #cc0000;
+      border-color: #4299e1;
     }
 
     .btn-primary {
       width: 100%;
       padding: 14px;
-      background: linear-gradient(135deg, #cc0000 0%, #ff0000 100%);
+      background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
       color: white;
       border: none;
       border-radius: 6px;
@@ -139,7 +122,7 @@
 
     .btn-primary:hover {
       transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(204, 0, 0, 0.3);
+      box-shadow: 0 4px 12px rgba(66, 153, 225, 0.3);
     }
 
     .btn-primary:disabled {
@@ -170,7 +153,7 @@
     }
 
     .code-input:focus {
-      border-color: #cc0000;
+      border-color: #4299e1;
     }
 
     .success-icon {
@@ -226,9 +209,9 @@
   
   <div class="container">
     <div class="header">
-      <div class="target-logo"></div>
+      <div class="auth-icon">🔐</div>
       <h1>Sign In</h1>
-      <p class="subtitle">Customer Portal Access</p>
+      <p class="subtitle">Secure Authentication Portal</p>
     </div>
 
     <!-- Error message (shown if no sessionId) -->
