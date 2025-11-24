@@ -14,22 +14,68 @@
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
       padding: 20px;
       background: #f5f5f5;
+      color: #333;
+    }
+    
+    body.dark-mode {
+      background: #1a1a1a;
+      color: #e0e0e0;
+    }
+    
+    .target-logo {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, #cc0000 0%, #ff0000 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(204, 0, 0, 0.3);
+      position: relative;
+    }
+
+    .target-logo::before {
+      content: '';
+      position: absolute;
+      width: 33px;
+      height: 33px;
+      border-radius: 50%;
+      background: white;
+    }
+
+    .target-logo::after {
+      content: '';
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #cc0000;
     }
     
     .header {
-      text-align: center;
+      display: flex;
+      align-items: center;
+      gap: 16px;
       margin-bottom: 20px;
+    }
+    
+    .header-content {
+      flex: 1;
     }
     
     .header h1 {
       font-size: 24px;
       color: #cc0000;
-      margin-bottom: 8px;
+      margin-bottom: 4px;
     }
     
     .header p {
       color: #666;
       font-size: 14px;
+    }
+    
+    body.dark-mode .header p {
+      color: #999;
     }
     
     .carousel-container {
@@ -71,9 +117,18 @@
       cursor: pointer;
     }
     
+    body.dark-mode .product-card {
+      background: #2a2a2a;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+    
     .product-card:hover {
       transform: translateY(-4px);
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    }
+    
+    body.dark-mode .product-card:hover {
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
     }
     
     .product-image {
@@ -83,6 +138,10 @@
       border-radius: 8px;
       background: #f9f9f9;
       margin-bottom: 12px;
+    }
+    
+    body.dark-mode .product-image {
+      background: #1a1a1a;
     }
     
     .product-title {
@@ -95,6 +154,10 @@
       -webkit-box-orient: vertical;
       overflow: hidden;
       min-height: 40px;
+    }
+    
+    body.dark-mode .product-title {
+      color: #e0e0e0;
     }
     
     .product-price {
@@ -111,6 +174,10 @@
       font-size: 12px;
       color: #666;
       margin-bottom: 8px;
+    }
+    
+    body.dark-mode .product-rating {
+      color: #999;
     }
     
     .stars {
@@ -156,6 +223,12 @@
       transition: transform 0.2s;
     }
     
+    body.dark-mode .nav-button {
+      background: #2a2a2a;
+      color: #e0e0e0;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    }
+    
     .nav-button:hover {
       transform: translateY(-50%) scale(1.1);
     }
@@ -174,10 +247,33 @@
       color: #666;
     }
     
+    body.dark-mode .no-results {
+      color: #999;
+    }
+    
     .loading {
       text-align: center;
       padding: 40px;
       color: #666;
+    }
+    
+    body.dark-mode .loading {
+      color: #999;
+    }
+    
+    .loading-spinner {
+      display: inline-block;
+      width: 40px;
+      height: 40px;
+      border: 4px solid rgba(204, 0, 0, 0.2);
+      border-top-color: #cc0000;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 16px;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
     }
     
     .results-count {
@@ -186,17 +282,132 @@
       font-size: 14px;
       margin-bottom: 16px;
     }
+    
+    body.dark-mode .results-count {
+      color: #999;
+    }
+    
+    .hidden {
+      display: none !important;
+    }
+    
+    /* Product Detail Page */
+    .product-detail {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    body.dark-mode .product-detail {
+      background: #2a2a2a;
+    }
+    
+    .back-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #f5f5f5;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 20px;
+      transition: background 0.2s;
+    }
+    
+    body.dark-mode .back-button {
+      background: #1a1a1a;
+      color: #e0e0e0;
+    }
+    
+    .back-button:hover {
+      background: #e0e0e0;
+    }
+    
+    body.dark-mode .back-button:hover {
+      background: #333;
+    }
+    
+    .product-detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      margin-bottom: 24px;
+    }
+    
+    .product-detail-image {
+      width: 100%;
+      max-height: 400px;
+      object-fit: contain;
+      border-radius: 8px;
+      background: #f9f9f9;
+    }
+    
+    body.dark-mode .product-detail-image {
+      background: #1a1a1a;
+    }
+    
+    .product-detail-info h2 {
+      font-size: 24px;
+      margin-bottom: 16px;
+      color: #333;
+    }
+    
+    body.dark-mode .product-detail-info h2 {
+      color: #e0e0e0;
+    }
+    
+    .product-detail-price {
+      font-size: 32px;
+      font-weight: 700;
+      color: #cc0000;
+      margin-bottom: 16px;
+    }
+    
+    .product-detail-description {
+      color: #666;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+    
+    body.dark-mode .product-detail-description {
+      color: #999;
+    }
+    
+    .buy-button {
+      display: inline-block;
+      background: #cc0000;
+      color: white;
+      padding: 14px 32px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 16px;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+    
+    .buy-button:hover {
+      background: #aa0000;
+    }
   </style>
 </head>
 <body>
   <div class="header">
-    <h1>🎯 Target Product Search</h1>
-    <p id="query-text">Loading results...</p>
+    <div class="target-logo"></div>
+    <div class="header-content">
+      <h1>Target Shopping</h1>
+      <p id="query-text">Loading results...</p>
+    </div>
   </div>
   
   <div id="results-count" class="results-count"></div>
   
   <div id="loading" class="loading">
+    <div class="loading-spinner"></div>
     <p>Loading products...</p>
   </div>
   
@@ -211,41 +422,83 @@
       <button class="nav-button next" onclick="scrollCarousel(1)">›</button>
     </div>
   </div>
+  
+  <div id="product-detail-wrapper" style="display: none;">
+    <div class="product-detail">
+      <button class="back-button" onclick="showCarousel()">
+        ← Back to Results
+      </button>
+      <div class="product-detail-grid">
+        <div>
+          <img id="detail-image" class="product-detail-image" src="" alt="">
+        </div>
+        <div class="product-detail-info">
+          <h2 id="detail-title"></h2>
+          <div id="detail-rating" class="product-rating"></div>
+          <div id="detail-price" class="product-detail-price"></div>
+          <div id="detail-description" class="product-detail-description"></div>
+          <a id="detail-link" href="#" target="_blank" class="buy-button">View on Target.com</a>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script>
-    // Get data from toolOutput
-    const toolOutput = window.openai?.toolOutput || {};
-    const products = toolOutput.products || [];
-    const query = toolOutput.query || '';
-    const totalResults = toolOutput.total_results || 0;
+    // Apply dark mode
+    const theme = window.openai?.theme || 'light';
+    if (theme === 'dark') {
+      document.body.classList.add('dark-mode');
+    }
     
-    console.log('Product carousel loaded with:', { query, totalResults, products });
+    console.log('Theme:', theme);
     
-    // Update query text
-    document.getElementById('query-text').textContent = `Results for "${query}"`;
+    // Wait for toolOutput to be available
+    let productsData = [];
+    let checkInterval;
     
-    // Hide loading
-    document.getElementById('loading').style.display = 'none';
-    
-    if (products.length === 0) {
-      document.getElementById('no-results').style.display = 'block';
-    } else {
-      document.getElementById('carousel-wrapper').style.display = 'block';
-      document.getElementById('results-count').textContent = `Showing ${products.length} products`;
+    function initializeCarousel() {
+      const toolOutput = window.openai?.toolOutput || {};
+      const products = toolOutput.products || [];
+      const query = toolOutput.query || '';
+      const totalResults = toolOutput.total_results || 0;
       
-      // Render products
+      // If we have data, proceed
+      if (products.length > 0 || query) {
+        clearInterval(checkInterval);
+        productsData = products;
+        
+        console.log('Product carousel loaded with:', { query, totalResults, products });
+        
+        // Update query text
+        document.getElementById('query-text').textContent = `Results for "${query}"`;
+        
+        // Hide loading
+        document.getElementById('loading').style.display = 'none';
+        
+        if (products.length === 0) {
+          document.getElementById('no-results').style.display = 'block';
+        } else {
+          document.getElementById('carousel-wrapper').style.display = 'block';
+          document.getElementById('results-count').textContent = `Showing ${products.length} products`;
+          
+          renderCarousel(products);
+        }
+      }
+    }
+    
+    function renderCarousel(products) {
       const carousel = document.getElementById('carousel');
+      carousel.innerHTML = '';
       
-      products.forEach(product => {
+      products.forEach((product, index) => {
         const card = document.createElement('div');
         card.className = 'product-card';
         
-        const imageUrl = product.thumbnail || product.image || 'https://via.placeholder.com/280x200?text=No+Image';
-        const title = product.title || 'Unknown Product';
-        const price = product.price || 'N/A';
-        const rating = product.rating || 0;
-        const reviewCount = product.reviews_count || 0;
-        const productUrl = product.url || '#';
+        const imageUrl = product.thumbnail || product.image || product.img || 'https://via.placeholder.com/280x200?text=No+Image';
+        const title = product.title || product.name || product.product_title || 'Product';
+        const price = product.price || product.current_price || 'N/A';
+        const rating = product.rating || product.stars || 0;
+        const reviewCount = product.reviews_count || product.reviews || 0;
         
         card.innerHTML = `
           <img src="${imageUrl}" alt="${title}" class="product-image" onerror="this.src='https://via.placeholder.com/280x200?text=No+Image'">
@@ -257,11 +510,65 @@
               <span>(${reviewCount} reviews)</span>
             </div>
           ` : ''}
-          <a href="${productUrl}" target="_blank" class="product-link">View on Target.com</a>
         `;
+        
+        // Add click handler to show product detail
+        card.addEventListener('click', () => showProductDetail(product));
         
         carousel.appendChild(card);
       });
+    }
+    
+    function showProductDetail(product) {
+      // Hide carousel
+      document.getElementById('carousel-wrapper').style.display = 'none';
+      document.getElementById('results-count').style.display = 'none';
+      
+      // Show detail page
+      document.getElementById('product-detail-wrapper').style.display = 'block';
+      
+      // Populate detail page
+      const imageUrl = product.thumbnail || product.image || product.img || 'https://via.placeholder.com/400x400?text=No+Image';
+      const title = product.title || product.name || product.product_title || 'Product';
+      const price = product.price || product.current_price || 'N/A';
+      const rating = product.rating || product.stars || 0;
+      const reviewCount = product.reviews_count || product.reviews || 0;
+      const description = product.description || product.features || 'No description available.';
+      const productUrl = product.url || product.link || '#';
+      
+      document.getElementById('detail-image').src = imageUrl;
+      document.getElementById('detail-image').alt = title;
+      document.getElementById('detail-title').textContent = title;
+      document.getElementById('detail-price').textContent = `$${price}`;
+      
+      // Rating
+      if (rating > 0) {
+        document.getElementById('detail-rating').innerHTML = `
+          <span class="stars">${'★'.repeat(Math.round(rating))}${'☆'.repeat(5 - Math.round(rating))}</span>
+          <span>(${reviewCount} reviews)</span>
+        `;
+        document.getElementById('detail-rating').style.display = 'flex';
+      } else {
+        document.getElementById('detail-rating').style.display = 'none';
+      }
+      
+      // Description
+      if (Array.isArray(description)) {
+        document.getElementById('detail-description').innerHTML = '<ul>' + description.map(item => `<li>${item}</li>`).join('') + '</ul>';
+      } else {
+        document.getElementById('detail-description').textContent = description;
+      }
+      
+      document.getElementById('detail-link').href = productUrl;
+    }
+    
+    function showCarousel() {
+      // Hide detail page
+      document.getElementById('product-detail-wrapper').style.display = 'none';
+      
+      // Show carousel
+      document.getElementById('carousel-wrapper').style.display = 'block';
+      document.getElementById('results-count').style.display = 'block';
     }
     
     // Scroll carousel
@@ -273,6 +580,12 @@
         behavior: 'smooth'
       });
     }
+    
+    // Check for data every 200ms
+    checkInterval = setInterval(initializeCarousel, 200);
+    
+    // Also try immediately
+    initializeCarousel();
   </script>
 </body>
 </html>

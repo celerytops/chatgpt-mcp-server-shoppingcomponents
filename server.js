@@ -348,10 +348,10 @@ function createMcp2Server() {
   // Widget for MCP2
   const mcp2Widget = {
     id: 'search-target-products',
-    title: 'Target Product Search',
+    title: 'Target Shopping',
     templateUri: 'ui://widget/product-carousel.html',
-    invoking: 'Searching Target products',
-    invoked: 'Product results ready',
+    invoking: 'Searching Target',
+    invoked: 'Products ready',
     html: readWidgetHtml('product-carousel'),
     responseText: 'Here are the Target product search results.'
   };
@@ -708,7 +708,7 @@ const httpServer = createServer(
             }
           },
           mcp2: {
-            name: 'Target Product Search',
+            name: 'Target Shopping',
             description: 'Search and browse Target products with visual carousel',
             endpoints: {
               mcp: ssePath2,
