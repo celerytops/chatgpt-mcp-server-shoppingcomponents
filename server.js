@@ -342,18 +342,18 @@ function createPizzazServer() {
 }
 
 /**
- * Create MCP Server 2 (Example)
+ * Create MCP Server 2 (Target Product Search)
  */
 function createMcp2Server() {
   // Widget for MCP2
   const mcp2Widget = {
-    id: 'example-mcp2-tool',
-    title: 'MCP2 Example Tool',
-    templateUri: 'ui://widget/example-mcp2.html',
-    invoking: 'Loading MCP2 widget',
-    invoked: 'MCP2 widget ready',
-    html: readWidgetHtml('example-mcp2'),
-    responseText: 'This is an example tool from MCP Server 2.'
+    id: 'search-target-products',
+    title: 'Target Product Search',
+    templateUri: 'ui://widget/product-carousel.html',
+    invoking: 'Searching Target products',
+    invoked: 'Product results ready',
+    html: readWidgetHtml('product-carousel'),
+    responseText: 'Here are the Target product search results.'
   };
 
   const server = new Server(
@@ -418,16 +418,21 @@ function createMcp2Server() {
       tools: [
         {
           name: mcp2Widget.id,
-          description: 'Show MCP2 example widget with custom message',
+          description: 'Search for products on Target.com. Returns top 10 product recommendations with images, prices, ratings, and links. Use this when the user wants to find, browse, or shop for products at Target.',
           inputSchema: {
             type: 'object',
             properties: {
-              message: {
+              query: {
                 type: 'string',
-                description: 'Custom message to display in the widget'
+                description: 'Search query for Target products (e.g., "coffee maker", "laptop", "toys for kids")'
+              },
+              page: {
+                type: 'string',
+                description: 'Page number for pagination (default: 1)',
+                default: '1'
               }
             },
-            required: []
+            required: ['query']
           },
           _meta: widgetDescriptorMeta(mcp2Widget)
         }
@@ -442,22 +447,74 @@ function createMcp2Server() {
       try {
         if (request.params.name === mcp2Widget.id) {
           const args = request.params.arguments || {};
-          const message = args.message || 'Hello from MCP Server 2!';
+          const query = args.query || '';
+          const page = args.page || '1';
           
-          console.log(`MCP2: Showing widget with message: ${message}`);
+          if (!query) {
+            throw new Error('Search query is required');
+          }
           
-          return {
-            content: [
-              {
-                type: 'text',
-                text: mcp2Widget.responseText
+          console.log(`MCP2: Searching Target for: ${query} (page ${page})`);
+          
+          // Get Unwrangle API key from environment
+          const apiKey = process.env.UNWRANGLE_API_KEY;
+          if (!apiKey) {
+            throw new Error('UNWRANGLE_API_KEY environment variable not set');
+          }
+          
+          // Call Unwrangle API
+          const baseUrl = 'https://data.unwrangle.com/api/getter/';
+          const params = new URLSearchParams({
+            platform: 'target_search',
+            search: query,
+            page: page,
+            store_no: '3991',
+            api_key: apiKey
+          });
+          
+          const unwrangleUrl = `${baseUrl}?${params.toString()}`;
+          
+          try {
+            const response = await fetch(unwrangleUrl, {
+              method: 'GET',
+              headers: {
+                'Accept': 'application/json'
               }
-            ],
-            structuredContent: {
-              message: message
-            },
-            _meta: widgetInvocationMeta(mcp2Widget)
-          };
+            });
+            
+            if (!response.ok) {
+              throw new Error(`Unwrangle API error: ${response.status} ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            const products = data.results || [];
+            
+            // Limit to top 10 products
+            const topProducts = products.slice(0, 10);
+            
+            console.log(`MCP2: Found ${products.length} products, showing top ${topProducts.length}`);
+            
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: `Found ${topProducts.length} Target products for "${query}". Browse the carousel above to view details.`
+                }
+              ],
+              structuredContent: {
+                query: query,
+                page: page,
+                total_results: topProducts.length,
+                products: topProducts,
+                credits_used: data.credits_used || 0,
+                remaining_credits: data.remaining_credits || 0
+              },
+              _meta: widgetInvocationMeta(mcp2Widget)
+            };
+          } catch (apiError) {
+            console.error('Unwrangle API error:', apiError);
+            throw new Error(`Failed to search Target products: ${apiError.message}`);
+          }
         }
         
         throw new Error(`Unknown tool: ${request.params.name}`);
@@ -651,8 +708,8 @@ const httpServer = createServer(
             }
           },
           mcp2: {
-            name: 'MCP2 Example',
-            description: 'Second MCP server for testing',
+            name: 'Target Product Search',
+            description: 'Search and browse Target products with visual carousel',
             endpoints: {
               mcp: ssePath2,
               messages: postPath2
