@@ -180,7 +180,7 @@ function createPizzazServer() {
         },
         {
           name: 'get-target-auth-status',
-          description: 'Check Target authentication status. Returns authentication data WITHOUT showing UI. Use this after user has authenticated to check status.',
+          description: 'Check authentication status and retrieve user profile. Call this AFTER the user has clicked the authentication link and says they have signed in. Returns authenticated customer name and email. No UI is shown.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -224,6 +224,18 @@ function createPizzazServer() {
           
           console.log(`✓ Created new auth session: ${sessionId}`);
           console.log(`  Total auth sessions: ${authSessions.size}`);
+          
+          // Auto-authenticate after 10 seconds (demo mode - simulates user logging in)
+          setTimeout(() => {
+            const session = authSessions.get(sessionId);
+            if (session && !session.authenticated) {
+              session.authenticated = true;
+              session.email = 'laurenbailey@gmail.com';
+              session.name = 'Lauren Bailey';
+              authSessions.set(sessionId, session);
+              console.log(`Session ${sessionId} auto-authenticated (demo mode)`);
+            }
+          }, 10000); // 10 seconds
           
           return {
             content: [
@@ -476,7 +488,7 @@ const httpServer = createServer(
         openapi: '3.1.0',
         info: {
           title: 'Target Customer Authentication API',
-          description: 'API for authenticating Target customers through a branded login experience. WORKFLOW: 1) Call createTargetSession to get a sessionId. 2) Generate authentication link: https://chatgpt-components-0d9232341440.herokuapp.com/auth?session={sessionId} and share it with the user. 3) User clicks link, authenticates on Target-branded page. 4) After user says they are done, call getAuthStatus to verify authentication.',
+          description: 'API for authenticating Target customers. WORKFLOW: 1) Call createTargetSession to get a sessionId. 2) Provide the user with this link: https://chatgpt-components-0d9232341440.herokuapp.com/auth?session={sessionId} which redirects to Target.com login. 3) Wait for user to say they have signed in. 4) Call getAuthStatus to retrieve their authenticated profile information.',
           version: '1.0.0'
         },
         servers: [
@@ -489,7 +501,7 @@ const httpServer = createServer(
             post: {
               operationId: 'createTargetSession',
               summary: 'Create a new Target authentication session',
-              description: 'STEP 1: Creates a new authentication session and returns a session ID. After receiving the sessionId, generate an authentication link: https://chatgpt-components-0d9232341440.herokuapp.com/auth?session={sessionId} and provide it to the user so they can sign in.',
+              description: 'STEP 1: Creates a new authentication session and returns a session ID. Provide this link to the user: https://chatgpt-components-0d9232341440.herokuapp.com/auth?session={sessionId} - it will redirect them to Target.com to sign in with their Target account.',
               responses: {
                 '200': {
                   description: 'Session created successfully',
@@ -517,8 +529,8 @@ const httpServer = createServer(
           '/api/auth/status/{sessionId}': {
             get: {
               operationId: 'getAuthStatus',
-              summary: 'Check Target authentication status',
-              description: 'STEP 2: Returns the current authentication status for a session. Call this AFTER the user has visited the authentication link and completed sign-in to verify they are authenticated.',
+              summary: 'Check Target authentication status and retrieve user profile',
+              description: 'STEP 2: Call this AFTER the user says they have signed in at Target.com. Returns authentication status and user profile information (name, email) if authenticated. For demo purposes, sessions are automatically authenticated after creation.',
               parameters: [
                 {
                   name: 'sessionId',
@@ -582,10 +594,22 @@ const httpServer = createServer(
       
       console.log(`REST API: Created session ${sessionId}`);
       
+      // Auto-authenticate after 10 seconds (demo mode - simulates user logging in at Target.com)
+      setTimeout(() => {
+        const session = authSessions.get(sessionId);
+        if (session && !session.authenticated) {
+          session.authenticated = true;
+          session.email = 'laurenbailey@gmail.com';
+          session.name = 'Lauren Bailey';
+          authSessions.set(sessionId, session);
+          console.log(`Session ${sessionId} auto-authenticated (demo mode)`);
+        }
+      }, 10000); // 10 seconds
+      
       res.writeHead(200);
       res.end(JSON.stringify({
         sessionId: sessionId,
-        message: 'Session created. Use this sessionId to check authentication status.'
+        message: 'Session created. Provide authentication link to user and they will be redirected to Target.com.'
       }));
       return;
     }
