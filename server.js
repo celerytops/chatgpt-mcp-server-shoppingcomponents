@@ -873,10 +873,188 @@ function createMcp3Server() {
   return server;
 }
 
+/**
+ * Create MCP Server 4 (Circle 360 Membership)
+ */
+function createMcp4Server() {
+  // Widget for MCP4
+  const signupWidget = {
+    id: 'circle-360-signup',
+    title: 'Circle 360 Signup',
+    templateUri: 'ui://widget/circle-signup.html',
+    invoking: 'Circle 360 coming right up',
+    invoked: 'Circle 360 almost ready',
+    html: readWidgetHtml('circle-signup'),
+    responseText: 'Circle 360 membership signup is ready.'
+  };
+  
+  // Metadata for check membership tool
+  const checkMembershipMeta = {
+    invoking: 'Checking membership status',
+    invoked: 'Membership status received'
+  };
+
+  const server = new Server(
+    {
+      name: 'circle-360',
+      version: '1.0.0'
+    },
+    {
+      capabilities: {
+        resources: {},
+        tools: {}
+      }
+    }
+  );
+
+  // List resources
+  server.setRequestHandler(
+    ListResourcesRequestSchema,
+    async (_request) => ({
+      resources: [
+        {
+          uri: signupWidget.templateUri,
+          name: signupWidget.title,
+          description: `${signupWidget.title} widget markup`,
+          mimeType: 'text/html+skybridge',
+          _meta: widgetDescriptorMeta(signupWidget)
+        }
+      ]
+    })
+  );
+
+  // Read resource
+  server.setRequestHandler(
+    ReadResourceRequestSchema,
+    async (request) => {
+      const uri = request.params.uri;
+      if (uri === signupWidget.templateUri) {
+        return {
+          contents: [
+            {
+              uri: signupWidget.templateUri,
+              mimeType: 'text/html+skybridge',
+              text: signupWidget.html
+            }
+          ]
+        };
+      }
+      throw new Error(`Unknown resource: ${uri}`);
+    }
+  );
+
+  // List resource templates
+  server.setRequestHandler(
+    ListResourceTemplatesRequestSchema,
+    async (_request) => ({ resourceTemplates: [] })
+  );
+
+  // List tools
+  server.setRequestHandler(
+    ListToolsRequestSchema,
+    async (_request) => ({
+      tools: [
+        {
+          name: 'check-circle-membership',
+          description: 'Check customer\'s Target Circle membership status. Returns current membership tier and Circle 360 benefits information. Use when customer asks about their membership or Circle 360.',
+          inputSchema: {
+            type: 'object',
+            properties: {},
+            required: []
+          }
+          // NO widget, just returns data
+        },
+        {
+          name: signupWidget.id,
+          description: 'Show Circle 360 membership signup page with membership tier options, payment, and shipping details. Customer can select annual ($99), monthly ($10.99), or free trial and complete enrollment. Use when customer wants to join Circle 360.',
+          inputSchema: {
+            type: 'object',
+            properties: {},
+            required: []
+          },
+          _meta: widgetDescriptorMeta(signupWidget)
+        }
+      ]
+    })
+  );
+
+  // Call tool
+  server.setRequestHandler(
+    CallToolRequestSchema,
+    async (request) => {
+      try {
+        // Handle check-circle-membership
+        if (request.params.name === 'check-circle-membership') {
+          console.log('MCP4: Checking Circle membership status');
+          
+          const benefits = [
+            'Unlimited same-day delivery on orders of $35+ from Target and other stores (through the Shipt network) with no mark-ups',
+            'Free 2-day shipping on many items (exclusions apply)',
+            'An extra 30 days to return eligible items beyond the standard Target return window',
+            'Early and exclusive access to select deals, launch events and brand collaborations',
+            'Monthly "freebies" or members-only offers to choose from'
+          ];
+          
+          const benefitsList = benefits.map((b, i) => `${i + 1}. ${b}`).join('\n');
+          
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Customer is currently a **Target Circle member** (free membership).\n\nThey are NOT a Circle 360 member.\n\n**Circle 360 Benefits:**\n${benefitsList}\n\nCircle 360 membership costs $99/year (or $10.99/month) and can save customers over $300/year.`
+              }
+            ],
+            structuredContent: {
+              current_membership: 'Circle',
+              circle_360_member: false,
+              circle_360_benefits: benefits,
+              pricing: {
+                annual: '$99/year',
+                monthly: '$10.99/month',
+                trial: 'Free 14-day trial'
+              }
+            },
+            _meta: {
+              'openai/toolInvocation/invoking': checkMembershipMeta.invoking,
+              'openai/toolInvocation/invoked': checkMembershipMeta.invoked
+            }
+          };
+        }
+        
+        // Handle circle-360-signup
+        if (request.params.name === signupWidget.id) {
+          console.log('MCP4: Showing Circle 360 signup');
+          
+          return {
+            content: [
+              {
+                type: 'text',
+                text: 'Circle 360 membership signup is ready. Select your membership plan and complete enrollment above.'
+              }
+            ],
+            structuredContent: {
+              initialized: true
+            },
+            _meta: widgetInvocationMeta(signupWidget)
+          };
+        }
+        
+        throw new Error(`Unknown tool: ${request.params.name}`);
+      } catch (error) {
+        console.error(`Error in MCP4 tool ${request.params.name}:`, error);
+        throw error;
+      }
+    }
+  );
+
+  return server;
+}
+
 // Session management for SSE connections
 const sseConnections = new Map();
 const sseConnections2 = new Map(); // For MCP2
 const sseConnections3 = new Map(); // For MCP3
+const sseConnections4 = new Map(); // For MCP4
 
 // Authentication session tracking
 const authSessions = new Map(); // sessionId -> { authenticated: boolean, email: string, name: string }
@@ -890,6 +1068,8 @@ const ssePath2 = '/mcp2';
 const postPath2 = '/mcp2/messages';
 const ssePath3 = '/mcp3';
 const postPath3 = '/mcp3/messages';
+const ssePath4 = '/mcp4';
+const postPath4 = '/mcp4/messages';
 
 // Handle SSE request
 async function handleSseRequest(res) {
@@ -1064,6 +1244,63 @@ async function handlePostMessage3(req, res, url) {
   }
 }
 
+// Handle SSE request for MCP4
+async function handleSseRequest4(res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  const server = createMcp4Server();
+  const transport = new SSEServerTransport(postPath4, res);
+  const sessionId = transport.sessionId;
+
+  sseConnections4.set(sessionId, { server, transport });
+
+  transport.onclose = async () => {
+    sseConnections4.delete(sessionId);
+  };
+
+  transport.onerror = (error) => {
+    console.error('MCP4 SSE transport error', error);
+  };
+
+  try {
+    await server.connect(transport);
+    console.log(`✓ MCP4 SSE session ${sessionId} connected`);
+  } catch (error) {
+    sseConnections4.delete(sessionId);
+    console.error('✗ Failed to start MCP4 SSE session:', error.message, error.stack);
+    if (!res.headersSent) {
+      res.writeHead(500).end('Failed to establish SSE connection');
+    }
+  }
+}
+
+// Handle POST message for MCP4
+async function handlePostMessage4(req, res, url) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Headers', 'content-type');
+  const sessionId = url.searchParams.get('sessionId');
+
+  if (!sessionId) {
+    res.writeHead(400).end('Missing sessionId query parameter');
+    return;
+  }
+
+  const connection = sseConnections4.get(sessionId);
+
+  if (!connection) {
+    res.writeHead(404).end('Unknown session');
+    return;
+  }
+
+  try {
+    await connection.transport.handlePostMessage(req, res);
+  } catch (error) {
+    console.error('Failed to process MCP4 message', error);
+    if (!res.headersSent) {
+      res.writeHead(500).end('Failed to process message');
+    }
+  }
+}
+
 // Server setup
 const portEnv = Number(process.env.PORT ?? 8000);
 const port = Number.isFinite(portEnv) ? portEnv : 8000;
@@ -1110,6 +1347,17 @@ const httpServer = createServer(
       return;
     }
 
+    // CORS preflight (MCP 4)
+    if (req.method === 'OPTIONS' && url.pathname === postPath4) {
+      res.writeHead(204, {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'content-type'
+      });
+      res.end();
+      return;
+    }
+
     // Root endpoint
     if (req.method === 'GET' && (url.pathname === '/' || url.pathname === '')) {
       res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -1140,6 +1388,14 @@ const httpServer = createServer(
             endpoints: {
               mcp: ssePath3,
               messages: postPath3
+            }
+          },
+          mcp4: {
+            name: 'Circle 360 Membership',
+            description: 'Check membership status and enroll in Target Circle 360',
+            endpoints: {
+              mcp: ssePath4,
+              messages: postPath4
             }
           }
         },
@@ -1456,6 +1712,18 @@ const httpServer = createServer(
     // POST messages endpoint (MCP 3)
     if (req.method === 'POST' && url.pathname === postPath3) {
       await handlePostMessage3(req, res, url);
+      return;
+    }
+
+    // SSE endpoint (MCP 4)
+    if (req.method === 'GET' && url.pathname === ssePath4) {
+      await handleSseRequest4(res);
+      return;
+    }
+
+    // POST messages endpoint (MCP 4)
+    if (req.method === 'POST' && url.pathname === postPath4) {
+      await handlePostMessage4(req, res, url);
       return;
     }
 

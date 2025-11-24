@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+      padding: 20px;
+      background: #f5f5f5;
+      color: #333;
+    }
+    
+    body.dark-mode {
+      background: #1a1a1a;
+      color: #e0e0e0;
+    }
+    
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    
+    .header {
+      background: white;
+      padding: 24px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      text-align: center;
+    }
+    
+    body.dark-mode .header {
+      background: #2a2a2a;
+    }
+    
+    .circle-logo {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    
+    .circle-text {
+      color: #cc0000;
+    }
+    
+    .circle-360 {
+      color: #333;
+    }
+    
+    body.dark-mode .circle-360 {
+      color: #e0e0e0;
+    }
+    
+    h1 {
+      font-size: 24px;
+      color: #333;
+      margin-bottom: 12px;
+    }
+    
+    body.dark-mode h1 {
+      color: #e0e0e0;
+    }
+    
+    .benefits {
+      background: #f3e5f5;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 24px;
+    }
+    
+    body.dark-mode .benefits {
+      background: #2a1f2e;
+    }
+    
+    .benefit-item {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    
+    .benefit-item:last-child {
+      margin-bottom: 0;
+    }
+    
+    .benefit-icon {
+      color: #cc0000;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    
+    .section {
+      background: white;
+      padding: 24px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    body.dark-mode .section {
+      background: #2a2a2a;
+    }
+    
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: #333;
+    }
+    
+    body.dark-mode .section-title {
+      color: #e0e0e0;
+    }
+    
+    .membership-option {
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+    
+    body.dark-mode .membership-option {
+      border-color: #444;
+    }
+    
+    .membership-option:hover {
+      border-color: #cc0000;
+    }
+    
+    .membership-option.selected {
+      border-color: #cc0000;
+      background: #fff5f5;
+    }
+    
+    body.dark-mode .membership-option.selected {
+      background: #2a1a1a;
+    }
+    
+    .membership-option .checkmark {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #00c853;
+      color: white;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: bold;
+    }
+    
+    .membership-option.selected .checkmark {
+      display: flex;
+    }
+    
+    .membership-badge {
+      display: inline-block;
+      background: #4a148c;
+      color: white;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    
+    .membership-price {
+      font-size: 28px;
+      font-weight: 700;
+      color: #333;
+      margin-bottom: 4px;
+    }
+    
+    body.dark-mode .membership-price {
+      color: #e0e0e0;
+    }
+    
+    .membership-price-detail {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 8px;
+    }
+    
+    body.dark-mode .membership-price-detail {
+      color: #999;
+    }
+    
+    .membership-description {
+      font-size: 14px;
+      color: #666;
+    }
+    
+    body.dark-mode .membership-description {
+      color: #999;
+    }
+    
+    .order-summary {
+      background: #f9f9f9;
+      padding: 16px;
+      border-radius: 8px;
+    }
+    
+    body.dark-mode .order-summary {
+      background: #1a1a1a;
+    }
+    
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+    
+    .summary-row.total {
+      font-size: 18px;
+      font-weight: 700;
+      padding-top: 12px;
+      border-top: 1px solid #ddd;
+    }
+    
+    body.dark-mode .summary-row.total {
+      border-top-color: #444;
+    }
+    
+    .info-box {
+      background: #f9f9f9;
+      padding: 16px;
+      border-radius: 8px;
+      border-left: 4px solid #cc0000;
+      font-size: 14px;
+      color: #666;
+    }
+    
+    body.dark-mode .info-box {
+      background: #1a1a1a;
+      color: #999;
+    }
+    
+    .info-box strong {
+      color: #333;
+      display: block;
+      margin-bottom: 4px;
+    }
+    
+    body.dark-mode .info-box strong {
+      color: #e0e0e0;
+    }
+    
+    .btn-primary {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #cc0000 0%, #ff0000 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.1s, box-shadow 0.2s;
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(204, 0, 0, 0.3);
+    }
+    
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .btn-spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-right: 8px;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    /* Success Screen */
+    .success-screen {
+      text-align: center;
+      padding: 40px 20px;
+      position: relative;
+    }
+    
+    .confetti {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background: #cc0000;
+      animation: confetti-fall 3s ease-out forwards;
+    }
+    
+    @keyframes confetti-fall {
+      to {
+        transform: translateY(400px) rotate(360deg);
+        opacity: 0;
+      }
+    }
+    
+    .success-icon {
+      width: 100px;
+      height: 100px;
+      margin: 0 auto 24px;
+      background: linear-gradient(135deg, #00c853 0%, #00e676 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 64px;
+      color: white;
+      animation: scaleIn 0.5s ease-out;
+    }
+    
+    @keyframes scaleIn {
+      from {
+        transform: scale(0);
+      }
+      to {
+        transform: scale(1);
+      }
+    }
+    
+    .success-title {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: #333;
+    }
+    
+    body.dark-mode .success-title {
+      color: #e0e0e0;
+    }
+    
+    .success-message {
+      font-size: 16px;
+      color: #666;
+      margin-bottom: 24px;
+    }
+    
+    body.dark-mode .success-message {
+      color: #999;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 40px;
+    }
+    
+    .loading-spinner {
+      display: inline-block;
+      width: 40px;
+      height: 40px;
+      border: 4px solid rgba(204, 0, 0, 0.2);
+      border-top-color: #cc0000;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div id="loading" class="loading">
+    <div class="loading-spinner"></div>
+    <p>Loading membership signup...</p>
+  </div>
+  
+  <div id="signup-content" style="display: none;">
+    <div class="container">
+      <div class="header">
+        <div class="circle-logo">
+          <span class="circle-text">◯circle</span> <span class="circle-360">360</span>
+        </div>
+        <h1>Save over $300/year as a member*</h1>
+        
+        <div class="benefits">
+          <div class="benefit-item">
+            <span class="benefit-icon">🛍️</span>
+            <span><strong>Same-day delivery</strong> from Target & more local stores without price markups</span>
+          </div>
+          <div class="benefit-item">
+            <span class="benefit-icon">🎁</span>
+            <span><strong>Monthly freebies</strong> - Choose from gifts & exclusive discounts</span>
+          </div>
+          <div class="benefit-item">
+            <span class="benefit-icon">🚚</span>
+            <span><strong>Free, fast shipping</strong> - Get eligible items as soon as tomorrow</span>
+          </div>
+          <div class="benefit-item">
+            <span class="benefit-icon">🏷️</span>
+            <span><strong>Early access to big sales</strong> - Plus, score members-only items</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Membership Options -->
+      <div class="section">
+        <div class="section-title">Start your membership</div>
+        
+        <div class="membership-option selected" data-price="99.00" data-type="annual" onclick="selectMembership(this)">
+          <div class="checkmark">✓</div>
+          <div class="membership-badge">Best value</div>
+          <div class="membership-price">$99.00 <span style="font-size: 16px; font-weight: 400;">/year</span></div>
+          <div class="membership-price-detail">($8.25/month)</div>
+          <div class="membership-description">A year of membership at our best regular price</div>
+        </div>
+        
+        <div class="membership-option" data-price="10.99" data-type="monthly" onclick="selectMembership(this)">
+          <div class="checkmark">✓</div>
+          <div class="membership-price">$10.99 <span style="font-size: 16px; font-weight: 400;">/month</span></div>
+          <div class="membership-description">All the perks with month-to-month flexibility</div>
+        </div>
+        
+        <div class="membership-option" data-price="0.00" data-type="trial" onclick="selectMembership(this)">
+          <div class="checkmark">✓</div>
+          <div class="membership-price">Free 14-day trial</div>
+          <div class="membership-description">Two weeks of same-day delivery & free, fast shipping. Then, $10.99/month to unlock all the perks</div>
+        </div>
+      </div>
+      
+      <!-- Order Summary -->
+      <div class="section">
+        <div class="section-title">Order Summary</div>
+        <div class="order-summary">
+          <div class="summary-row">
+            <span>Subtotal (1 item)</span>
+            <span id="subtotal">$99.00</span>
+          </div>
+          <div class="summary-row">
+            <span>Estimated taxes</span>
+            <span id="tax">$7.67</span>
+          </div>
+          <div class="summary-row total">
+            <span>Total</span>
+            <span id="total">$106.67</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Payment -->
+      <div class="section">
+        <div class="section-title">Payment Method</div>
+        <div class="info-box">
+          <strong>Visa •••• 4242</strong>
+          Expires 12/25
+        </div>
+      </div>
+      
+      <!-- Address -->
+      <div class="section">
+        <div class="section-title">Address</div>
+        <div class="info-box">
+          <strong>Lauren Bailey</strong>
+          123 Main Street<br>
+          San Francisco, CA 94102<br>
+          United States
+        </div>
+      </div>
+      
+      <!-- Submit Button -->
+      <div class="section">
+        <button class="btn-primary" id="submit-btn" onclick="startMembership()">
+          Start membership
+        </button>
+        <p style="text-align: center; margin-top: 12px; font-size: 12px; color: #666;">Auto-renews at <span id="renewal-price">$99/year</span>. Turn off renewal anytime.</p>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Success Screen -->
+  <div id="success-content" style="display: none;">
+    <div class="container">
+      <div class="section success-screen">
+        <div id="confetti-container"></div>
+        <div class="success-icon">✓</div>
+        <div class="success-title">Welcome to Circle 360!</div>
+        <div class="success-message">You're set to enjoy all the benefits of Circle 360</div>
+        
+        <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; text-align: left;">
+          <p style="font-size: 14px; color: #1976d2; margin-bottom: 12px;"><strong>Your benefits are now active:</strong></p>
+          <p style="font-size: 13px; color: #1565c0; margin-bottom: 8px;">✓ Unlimited same-day delivery on orders $35+</p>
+          <p style="font-size: 13px; color: #1565c0; margin-bottom: 8px;">✓ Free 2-day shipping</p>
+          <p style="font-size: 13px; color: #1565c0; margin-bottom: 8px;">✓ Extra 30 days to return items</p>
+          <p style="font-size: 13px; color: #1565c0;">✓ Early access to deals & monthly freebies</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Apply dark mode
+    const theme = window.openai?.theme || 'light';
+    if (theme === 'dark') {
+      document.body.classList.add('dark-mode');
+    }
+    
+    let selectedPlan = 'annual';
+    let checkInterval;
+    
+    function initialize() {
+      const toolOutput = window.openai?.toolOutput || {};
+      
+      if (toolOutput.initialized) {
+        clearInterval(checkInterval);
+        console.log('Circle 360 signup loaded');
+        
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('signup-content').style.display = 'block';
+      }
+    }
+    
+    function selectMembership(element) {
+      // Remove selected from all
+      document.querySelectorAll('.membership-option').forEach(opt => {
+        opt.classList.remove('selected');
+      });
+      
+      // Add selected to clicked
+      element.classList.add('selected');
+      
+      // Update pricing
+      const price = parseFloat(element.dataset.price);
+      const type = element.dataset.type;
+      selectedPlan = type;
+      
+      let subtotal = price;
+      let tax = 0;
+      let renewalText = '';
+      
+      if (type === 'trial') {
+        subtotal = 0;
+        tax = 0;
+        renewalText = '$10.99/month after trial';
+      } else if (type === 'monthly') {
+        tax = price * 0.0775;
+        renewalText = '$10.99/month';
+      } else {
+        tax = price * 0.0775;
+        renewalText = '$99/year';
+      }
+      
+      const total = subtotal + tax;
+      
+      document.getElementById('subtotal').textContent = '$' + subtotal.toFixed(2);
+      document.getElementById('tax').textContent = '$' + tax.toFixed(2);
+      document.getElementById('total').textContent = '$' + total.toFixed(2);
+      document.getElementById('renewal-price').textContent = renewalText;
+    }
+    
+    async function startMembership() {
+      const btn = document.getElementById('submit-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="btn-spinner"></span> Processing...';
+      
+      // Simulate processing
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Show success with confetti
+      document.getElementById('signup-content').style.display = 'none';
+      document.getElementById('success-content').style.display = 'block';
+      
+      // Generate confetti
+      const container = document.getElementById('confetti-container');
+      const colors = ['#cc0000', '#ff0000', '#4a148c', '#00c853', '#ffa500'];
+      
+      for (let i = 0; i < 50; i++) {
+        const confetti = document.createElement('div');
+        confetti.className = 'confetti';
+        confetti.style.left = Math.random() * 100 + '%';
+        confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        confetti.style.animationDelay = Math.random() * 0.5 + 's';
+        confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
+        container.appendChild(confetti);
+      }
+    }
+    
+    // Check for data every 200ms
+    checkInterval = setInterval(initialize, 200);
+    initialize();
+  </script>
+</body>
+</html>
+
