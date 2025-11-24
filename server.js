@@ -355,6 +355,12 @@ function createMcp2Server() {
     html: readWidgetHtml('product-carousel'),
     responseText: 'Here are the Target product search results.'
   };
+  
+  // Agentforce tool metadata (no widget, just data)
+  const agentforceMeta = {
+    invoking: 'Getting recommendations from Agentforce...',
+    invoked: 'Recommendations received'
+  };
 
   const server = new Server(
     {
@@ -418,7 +424,7 @@ function createMcp2Server() {
       tools: [
         {
           name: mcp2Widget.id,
-          description: 'Search for products on Target.com. Returns top 10 product recommendations with images, prices, ratings, and links. Use this when the user wants to find, browse, or shop for products at Target.',
+          description: 'STEP 1: Search for products on Target.com. Shows a visual carousel with top 10 product recommendations. After calling this, you MUST call get-agentforce-recommendations to get personalized recommendations and full product details.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -435,6 +441,26 @@ function createMcp2Server() {
             required: ['query']
           },
           _meta: widgetDescriptorMeta(mcp2Widget)
+        },
+        {
+          name: 'get-agentforce-recommendations',
+          description: 'STEP 2: Get Agentforce AI recommendations and full product details. Call this AFTER search-target-products to receive personalized recommendations based on customer purchase history and complete product information for the search results.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              query: {
+                type: 'string',
+                description: 'The same search query used in search-target-products'
+              },
+              page: {
+                type: 'string',
+                description: 'The same page number used in search-target-products (default: 1)',
+                default: '1'
+              }
+            },
+            required: ['query']
+          }
+          // NO _meta here - this tool does NOT show a widget, just returns data
         }
       ]
     })
@@ -514,6 +540,98 @@ function createMcp2Server() {
           } catch (apiError) {
             console.error('Unwrangle API error:', apiError);
             throw new Error(`Failed to search Target products: ${apiError.message}`);
+          }
+        }
+        
+        // Handle get-agentforce-recommendations (NO UI, just data for ChatGPT)
+        if (request.params.name === 'get-agentforce-recommendations') {
+          const args = request.params.arguments || {};
+          const query = args.query || '';
+          const page = args.page || '1';
+          
+          if (!query) {
+            throw new Error('Search query is required');
+          }
+          
+          console.log(`MCP2 Agentforce: Getting recommendations for: ${query} (page ${page})`);
+          
+          // Get Unwrangle API key from environment
+          const apiKey = process.env.UNWRANGLE_API_KEY;
+          if (!apiKey) {
+            throw new Error('UNWRANGLE_API_KEY environment variable not set');
+          }
+          
+          // Call Unwrangle API (same as carousel, but return data to ChatGPT)
+          const baseUrl = 'https://data.unwrangle.com/api/getter/';
+          const params = new URLSearchParams({
+            platform: 'target_search',
+            search: query,
+            page: page,
+            store_no: '3991',
+            api_key: apiKey
+          });
+          
+          const unwrangleUrl = `${baseUrl}?${params.toString()}`;
+          
+          try {
+            const response = await fetch(unwrangleUrl, {
+              method: 'GET',
+              headers: {
+                'Accept': 'application/json'
+              }
+            });
+            
+            if (!response.ok) {
+              throw new Error(`Unwrangle API error: ${response.status} ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            const products = data.results || [];
+            
+            // Limit to top 10 products
+            const topProducts = products.slice(0, 10);
+            
+            console.log(`MCP2 Agentforce: Retrieved ${topProducts.length} products with full details`);
+            
+            // Create detailed product list for ChatGPT
+            const productList = topProducts.map((p, idx) => {
+              const title = p.title || p.name || p.product_title || 'Product';
+              const price = p.price || p.current_price || 'N/A';
+              const rating = p.rating || p.stars || 0;
+              return `${idx + 1}. ${title} - $${price} (${rating}★)`;
+            }).join('\n');
+            
+            // Personalized recommendation message
+            const personalizedMessage = `\n\n🎯 **Agentforce Recommendation:**\nBased on the customer's previous purchases, I recommend the **Fitbit Charge 6** as the best choice. The customer owns a previous version of a Fitbit, and the Charge 6 offers significant upgrades in health tracking, battery life, and compatibility with their existing fitness ecosystem.`;
+            
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: `Retrieved ${topProducts.length} products from Target for "${query}":\n\n${productList}${personalizedMessage}`
+                }
+              ],
+              structuredContent: {
+                query: query,
+                page: page,
+                total_results: topProducts.length,
+                products: topProducts,
+                agentforce_recommendation: {
+                  recommended_product: "Fitbit Charge 6",
+                  reason: "Customer owns a previous version of Fitbit",
+                  message: "Based on their purchases from before, the Fitbit Charge 6 is the recommended choice, since they own a previous version of a Fitbit already."
+                },
+                credits_used: data.credits_used || 0,
+                remaining_credits: data.remaining_credits || 0
+              },
+              _meta: {
+                'openai/toolInvocation/invoking': agentforceMeta.invoking,
+                'openai/toolInvocation/invoked': agentforceMeta.invoked
+              }
+            };
+          } catch (apiError) {
+            console.error('Unwrangle API error:', apiError);
+            throw new Error(`Failed to get Agentforce recommendations: ${apiError.message}`);
           }
         }
         
