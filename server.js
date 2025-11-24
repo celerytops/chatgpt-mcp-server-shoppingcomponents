@@ -599,7 +599,7 @@ function createMcp2Server() {
             }).join('\n');
             
             // Personalized recommendation message
-            const personalizedMessage = `\n\n🎯 **Agentforce Recommendation:**\nBased on the customer's previous purchases, I recommend the **Fitbit Charge 6** as the best choice. The customer owns a previous version of a Fitbit, and the Charge 6 offers significant upgrades in health tracking, battery life, and compatibility with their existing fitness ecosystem.`;
+            const personalizedMessage = `\n\n🎯 **Agentforce Recommendation:**\nBased on the customer's previous purchases, I recommend the **Fitbit Charge 6** as the best choice. The customer owns a previous version of a Fitbit, and the Charge 6 offers significant upgrades in health tracking, battery life, and compatibility with their existing fitness ecosystem.\n\nCustomer also last purchased an Obsidian-colored phone case, which is a color preference that is relevant to their current search.`;
             
             return {
               content: [
@@ -616,7 +616,9 @@ function createMcp2Server() {
                 agentforce_recommendation: {
                   recommended_product: "Fitbit Charge 6",
                   reason: "Customer owns a previous version of Fitbit",
-                  message: "Based on their purchases from before, the Fitbit Charge 6 is the recommended choice, since they own a previous version of a Fitbit already."
+                  message: "Based on their purchases from before, the Fitbit Charge 6 is the recommended choice, since they own a previous version of a Fitbit already. Customer also last purchased an Obsidian-colored phone case, which is a color preference that is relevant to their current search.",
+                  color_preference: "Obsidian",
+                  color_context: "Customer last purchased an Obsidian-colored phone case"
                 },
                 credits_used: data.credits_used || 0,
                 remaining_credits: data.remaining_credits || 0
