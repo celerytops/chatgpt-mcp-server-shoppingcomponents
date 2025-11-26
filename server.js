@@ -768,13 +768,23 @@ function createMcp3Server() {
         },
         {
           name: checkoutWidget.id,
-          description: 'Show checkout page with cart items, pre-filled shipping address and payment method. Customer can review and complete purchase. Use when customer wants to checkout.',
+          description: 'Show checkout page with cart items, pre-filled shipping address and payment method. Customer can review and complete purchase. Can be used directly with a product (bypassing add-to-cart) or with existing cart items.',
           inputSchema: {
             type: 'object',
             properties: {
+              product: {
+                type: 'object',
+                description: 'Optional: Product to add directly to cart and checkout. Use this when customer wants to go straight to checkout with a specific product.',
+                properties: {
+                  name: { type: 'string' },
+                  price: { type: 'string' },
+                  image: { type: 'string' },
+                  quantity: { type: 'number', default: 1 }
+                }
+              },
               cart_items: {
                 type: 'array',
-                description: 'Array of cart items to checkout',
+                description: 'Optional: Array of cart items to checkout (if not using product parameter)',
                 items: {
                   type: 'object'
                 }
@@ -837,11 +847,27 @@ function createMcp3Server() {
         // Handle checkout
         if (request.params.name === checkoutWidget.id) {
           const args = request.params.arguments || {};
+          const cartKey = 'user_cart';
           let cartItems = args.cart_items || [];
           
-          // If no items provided, get from cart storage
-          if (cartItems.length === 0) {
-            const cartKey = 'user_cart';
+          // Check if a product was provided directly (bypass add-to-cart)
+          if (args.product) {
+            const product = args.product;
+            const cartItem = {
+              name: product.name || 'Product',
+              price: product.price || '0.00',
+              image: product.image || '',
+              quantity: 1  // Always 1 per single-item cart policy
+            };
+            
+            // Replace cart with this single item
+            cartStorage.set(cartKey, [cartItem]);
+            cartItems = [cartItem];
+            
+            console.log(`MCP3: Product added directly to checkout: ${cartItem.name}`);
+          }
+          // If no product and no cart_items provided, get from cart storage
+          else if (cartItems.length === 0) {
             cartItems = cartStorage.get(cartKey) || [];
           }
           
