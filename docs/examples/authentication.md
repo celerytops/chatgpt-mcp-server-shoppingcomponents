@@ -503,3 +503,4 @@ In `widgets/target-auth.html`:
 - [Checkout](checkout.md) - Requires authenticated user
 - [Architecture](../ARCHITECTURE.md) - System overview
 
+

@@ -692,3 +692,4 @@ productCards.forEach(card => observer.observe(card));
 - [Authentication](authentication.md) - Personalized recommendations
 - [Architecture](../ARCHITECTURE.md) - System overview
 
+
