@@ -1,498 +1,224 @@
-# Building MCP Servers for ChatGPT: A Complete Guide
+# ChatGPT MCP Server Examples
 
-![MCP Server Examples](https://img.shields.io/badge/MCP-Ready-brightgreen) ![Node.js](https://img.shields.io/badge/node-%3E%3D20.x-blue) ![License](https://img.shields.io/badge/license-MIT-blue)
+> Build interactive, branded components for ChatGPT using the Model Context Protocol (MCP)
 
-**Live Demo MCP Servers** | Built for ChatGPT's Model Context Protocol
-
-This repository demonstrates how to build production-ready MCP (Model Context Protocol) servers that integrate with ChatGPT. It includes **4 complete examples** with interactive UI widgets, session management, and real-world use cases.
+This repository contains **complete, production-ready examples** of MCP servers that demonstrate how to create rich, interactive experiences within ChatGPT. Each example showcases different UI patterns, state management techniques, and integration strategies.
 
 ## 🎯 What You'll Learn
 
-- How to create MCP servers that ChatGPT can connect to
-- Building interactive UI widgets that render inside ChatGPT
-- Managing user sessions across multiple tool calls
-- Designing seamless authentication flows
-- Creating product carousels and checkout experiences
-- Implementing real-time state management with SSE
-- Supporting both light and dark modes
-- Deploying MCP servers to production (Heroku)
+- How to build MCP servers that serve interactive widgets to ChatGPT
+- State management across user sessions
+- Dark/light mode support
+- Multi-step UI flows with transitions
+- API integration and data presentation
+- Deployment strategies
 
-## 🚀 Live MCP Servers (Ready to Use!)
+## 🚀 Live MCP Server URLs
 
 You can connect to these live servers directly in ChatGPT:
 
-| Server | URL | What It Does |
-|--------|-----|--------------|
-| **MCP1: Authentication** | `https://chatgpt-components-0d9232341440.herokuapp.com/mcp` | Session-based Target login with 3-screen flow |
-| **MCP2: Product Search** | `https://chatgpt-components-0d9232341440.herokuapp.com/mcp2` | Product carousel + Agentforce AI recommendations |
-| **MCP3: Checkout** | `https://chatgpt-components-0d9232341440.herokuapp.com/mcp3` | Add-to-cart + complete checkout flow |
-| **MCP4: Membership** | `https://chatgpt-components-0d9232341440.herokuapp.com/mcp4` | Circle 360 membership signup |
+| MCP Server | URL | Description |
+|------------|-----|-------------|
+| **Authentication** | `https://chatgpt-components-0d9232341440.herokuapp.com/mcp` | Session-based authentication with 3-screen flow |
+| **Product Search** | `https://chatgpt-components-0d9232341440.herokuapp.com/mcp2` | Interactive product carousel with Agentforce recommendations |
+| **Checkout** | `https://chatgpt-components-0d9232341440.herokuapp.com/mcp3` | Shopping cart and checkout flow |
+| **Membership** | `https://chatgpt-components-0d9232341440.herokuapp.com/mcp4` | Circle 360 membership signup with tier selection |
 
-### How to Connect in ChatGPT
+### How to Connect
 
-1. Open **ChatGPT Settings** → **Connectors**
-2. Click **Add connector**
-3. Paste any MCP URL from above
-4. In a conversation, click **Attach** and select the connector
-5. Start using it! Try: *"Sign me into my Target account"*
+1. Open ChatGPT → **Settings** → **Connectors**
+2. Click **"Add Connector"**
+3. Paste one of the URLs above
+4. Start chatting! Try: *"Log me into my Target account"* or *"Search for fitness trackers"*
 
----
+## 📚 What's Included
 
-## 📦 What's Included
+### 4 Complete MCP Server Examples
 
-### MCP Server 1: Authentication
-**Files**: `widgets/target-auth.html`
+#### 1. **Authentication Server** (`/mcp`)
+- 3-screen authentication flow (login → verification → success)
+- Session management with unique session IDs
+- State persistence across tool calls
+- Demo credentials for testing
 
-A session-based authentication system that demonstrates:
-- Creating unique session IDs
-- Managing authentication state across tool calls
-- 3-screen UI flow (login → verification → success)
+**Example prompt:** *"I need to sign in to Target"*
+
+#### 2. **Product Search Server** (`/mcp2`)
+- Product carousel widget with images, prices, ratings
+- Agentforce personalized recommendations
+- Integration with Unwrangle API
+- Detail view for individual products
 - Dark/light mode support
-- Loading states and error handling
 
-**Try it**: *"I need to sign in to Target"*
+**Example prompt:** *"Search Target for fitness trackers"*
 
-**Tools**:
-- `create-target-session`: Generates a unique session ID
-- `authenticate-target`: Shows login widget tied to session
-- `get-target-auth-status`: Checks if session is authenticated
+#### 3. **Checkout Server** (`/mcp3`)
+- Add-to-cart confirmation widget
+- Complete checkout flow with pre-filled payment/shipping
+- Order summary and success animations
+- Single-item cart enforcement
 
----
+**Example prompt:** *"Add the Fitbit to my cart and checkout"*
 
-### MCP Server 2: Product Search
-**Files**: `widgets/product-carousel.html`
+#### 4. **Membership Server** (`/mcp4`)
+- Circle 360 membership signup
+- 3-tier selection UI
+- Dynamic order summary
+- Processing screen with success confetti
+- Demo reset endpoint for testing
 
-A product search system with AI-powered recommendations:
-- Calls Unwrangle API for real Target product data
-- Displays results in an interactive carousel
-- Product detail pages with back navigation
-- Agentforce-style personalized recommendations
+**Example prompt:** *"Sign me up for Circle 360"*
 
-**Try it**: *"Show me fitness trackers on Target"*
+## 🏗️ Repository Structure
 
-**Tools**:
-- `search-target-products`: Returns carousel widget with top 10 products
-- `get-agentforce-recommendations`: Returns full product data + personalized message
-
----
-
-### MCP Server 3: Checkout
-**Files**: `widgets/add-to-cart.html`, `widgets/checkout.html`
-
-A complete e-commerce checkout flow:
-- Add products to cart with confirmation animation
-- Pre-filled shipping and payment (demo mode)
-- Order summary and success screens
-- Cart state management
-
-**Try it**: *"Add the Fitbit Charge 6 to my cart and check out"*
-
-**Tools**:
-- `add-to-cart`: Shows success animation, adds to cart
-- `checkout`: Complete purchase flow with order summary
-
----
-
-### MCP Server 4: Membership
-**Files**: `widgets/circle-signup.html`
-
-A membership enrollment component:
-- 3-tier membership selection (Standard, Plus, Max)
-- Dynamic pricing and benefits display
-- Processing animations and success confetti 🎉
-- Responsive design with dark mode
-
-**Try it**: *"Sign me up for Circle 360"*
-
-**Tools**:
-- `check-circle-membership`: Returns membership status and benefits
-- `circle-signup`: Shows enrollment widget
-
----
-
-## 🛠️ Technical Architecture
-
-### MCP Server Structure
-
-```javascript
-// Create an MCP server
-function createMcpServer(serverName, tools) {
-  const server = new Server({
-    name: serverName,
-    version: '1.0.0'
-  }, {
-    capabilities: {
-      tools: {}
-    }
-  });
-
-  // Define tools
-  server.setRequestHandler(ListToolsRequestSchema, async () => ({
-    tools: tools
-  }));
-
-  // Handle tool calls
-  server.setRequestHandler(CallToolRequestSchema, async (request) => {
-    // Return widget + data
-  });
-
-  return server;
-}
+```
+ChatGPT Components/
+├── server.js                 # Main Node.js MCP server (all 4 servers)
+├── widgets/                  # Interactive HTML components
+│   ├── target-auth.html      # Authentication widget
+│   ├── product-carousel.html # Product search widget
+│   ├── add-to-cart.html      # Add to cart widget
+│   ├── checkout.html         # Checkout widget
+│   └── circle-signup.html    # Membership signup widget
+├── public/                   # Static pages
+│   ├── auth.html            # External auth page (Custom GPT Actions)
+│   └── privacy.html         # Privacy policy
+├── docs/                     # Documentation
+│   ├── BUILDING_MCP_SERVERS.md    # Tutorial: Build your own
+│   ├── ARCHITECTURE.md            # System design overview
+│   └── examples/                  # Detailed example docs
+│       ├── authentication.md
+│       ├── product-search.md
+│       ├── checkout.md
+│       └── membership.md
+├── package.json             # Dependencies
+├── Procfile                 # Heroku deployment config
+└── README.md               # You are here
 ```
 
-### Widget Communication
-
-Widgets use the `window.openai` API to interact with ChatGPT:
-
-```javascript
-// Get data passed from server
-const toolOutput = await window.openai.toolOutput();
-
-// Send messages back to ChatGPT
-await window.openai.sendFollowUpMessage('User authenticated!');
-
-// Update widget state
-await window.openai.setWidgetState({ authenticated: true });
-
-// Get current theme
-const theme = await window.openai.theme(); // 'light' or 'dark'
-```
-
-### Session Management
-
-```javascript
-// Store sessions in memory
-const authSessions = new Map();
-const cartStorage = new Map();
-
-// Create session
-const sessionId = `sess_${Date.now()}_${Math.random()}`;
-authSessions.set(sessionId, {
-  authenticated: false,
-  createdAt: Date.now()
-});
-
-// Check session
-const session = authSessions.get(sessionId);
-if (session?.authenticated) {
-  // User is authenticated
-}
-```
-
-### Tool Response Format
-
-```javascript
-return {
-  content: [
-    {
-      type: 'widget',
-      widget: 'auth-widget',
-      data: {
-        sessionId: 'sess_123',
-        authenticated: false
-      }
-    },
-    {
-      type: 'text',
-      text: 'Authentication widget displayed'
-    }
-  ],
-  structuredContent: {
-    sessionId: 'sess_123',
-    status: 'pending'
-  }
-};
-```
-
----
-
-## 💻 Local Development
+## 🎓 Getting Started
 
 ### Prerequisites
 
 - Node.js 20.x or higher
 - npm 10.x or higher
+- (Optional) Heroku CLI for deployment
 
-### Setup
+### Local Development
 
+1. **Clone the repository**
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/chatgpt-mcp-servers.git
-cd chatgpt-mcp-servers
+git clone <your-repo-url>
+cd ChatGPT-Components
+```
 
-# Install dependencies
+2. **Install dependencies**
+```bash
 npm install
+```
 
-# Start the server
+3. **Set environment variables**
+```bash
+export UNWRANGLE_API_KEY=your_api_key_here  # For product search
+```
+
+4. **Start the server**
+```bash
 npm start
 ```
 
-The server will run at `http://localhost:8000`
+5. **Test in ChatGPT**
+   - Add connector: `http://localhost:8000/mcp` (or `/mcp2`, `/mcp3`, `/mcp4`)
+   - Start chatting!
 
-### Test Locally
-
-1. Start the server with `npm start`
-2. In ChatGPT Settings → Connectors, add: `http://localhost:8000/mcp`
-3. Test your tools!
-
----
-
-## 🌐 Deploying to Heroku
-
-### One-Time Setup
+### Deploy to Heroku
 
 ```bash
-# Install Heroku CLI
-brew tap heroku/brew && brew install heroku
-
-# Login to Heroku
-heroku login
-
-# Create a new app
 heroku create your-app-name
-
-# Set environment variables (if needed)
-heroku config:set UNWRANGLE_API_KEY=your_key_here
-```
-
-### Deploy
-
-```bash
-# Commit your changes
-git add -A
-git commit -m "Your update message"
-
-# Push to Heroku
+heroku config:set UNWRANGLE_API_KEY=your_api_key_here
 git push heroku main
 ```
 
-Your MCP server will be live at: `https://your-app-name.herokuapp.com/mcp`
+Your MCP servers will be available at:
+- `https://your-app-name.herokuapp.com/mcp`
+- `https://your-app-name.herokuapp.com/mcp2`
+- `https://your-app-name.herokuapp.com/mcp3`
+- `https://your-app-name.herokuapp.com/mcp4`
 
----
+## 📖 Learn More
 
-## 📚 Key Concepts
+- **[Building MCP Servers Tutorial](docs/BUILDING_MCP_SERVERS.md)** - Step-by-step guide to creating your own MCP server
+- **[Architecture Overview](docs/ARCHITECTURE.md)** - How the system works under the hood
+- **[Example Documentation](docs/examples/)** - Deep dives into each example server
 
-### 1. Sequential vs Parallel Tool Calls
+## 🎨 Key Features Demonstrated
 
-ChatGPT may try to call tools in parallel. For session-based flows:
+### UI/UX Patterns
+- ✅ Multi-screen flows with smooth transitions
+- ✅ Loading states and progress indicators
+- ✅ Success animations (checkmarks, confetti)
+- ✅ Dark/light mode support (respects ChatGPT theme)
+- ✅ Responsive design
+- ✅ Form validation and error handling
 
-```javascript
-// ❌ Bad: Requires sessionId but might be called before session exists
-authenticate-target { sessionId: undefined }
+### Technical Patterns
+- ✅ Session management with unique IDs
+- ✅ State persistence across tool calls
+- ✅ SSE (Server-Sent Events) for real-time communication
+- ✅ Multiple MCP servers on one Node.js app
+- ✅ External API integration
+- ✅ Widget-to-server communication
+- ✅ `window.openai` API usage
 
-// ✅ Good: Force sequential with clear descriptions
-tools: [
-  {
-    name: 'create-target-session',
-    description: 'MUST be called FIRST. Creates a session ID.'
-  },
-  {
-    name: 'authenticate-target',
-    description: 'Requires sessionId from create-target-session.'
-  }
-]
-```
+### Business Logic
+- ✅ Authentication flows
+- ✅ Product recommendations
+- ✅ Shopping cart management
+- ✅ Payment/checkout flows
+- ✅ Membership signups
 
-### 2. Widget Loading States
+## 🔧 Customization
 
-Always show a loading screen while waiting for data:
+Each widget is self-contained in `widgets/` and can be customized:
+- **Styling**: Modify CSS within each HTML file
+- **Branding**: Change colors, logos, and text
+- **Flow**: Add/remove steps in multi-screen flows
+- **Behavior**: Edit JavaScript event handlers
 
-```javascript
-// In widget
-const toolOutput = await window.openai.toolOutput();
-
-if (!toolOutput || !toolOutput.sessionId) {
-  // Show loading spinner
-  showLoading();
-  // Poll until data arrives
-  setTimeout(checkAgain, 100);
-}
-```
-
-### 3. Dark Mode Support
-
-```css
-/* Detect theme */
-const theme = await window.openai.theme();
-
-/* Apply theme-specific styles */
-:root[data-theme="dark"] {
-  --bg-color: #1a1a1a;
-  --text-color: #ffffff;
-}
-
-:root[data-theme="light"] {
-  --bg-color: #ffffff;
-  --text-color: #000000;
-}
-```
-
-### 4. State Management
-
-For multi-step flows, store state server-side:
-
-```javascript
-// Store cart items tied to session
-const cartStorage = new Map();
-cartStorage.set(sessionId, { items: [...] });
-
-// Clear old sessions periodically
-setInterval(() => {
-  const now = Date.now();
-  for (const [id, session] of authSessions.entries()) {
-    if (now - session.createdAt > 10 * 60 * 1000) {
-      authSessions.delete(id);
-    }
-  }
-}, 60000);
-```
-
----
-
-## 🎨 Widget Design Best Practices
-
-### 1. Responsive Layout
-- Use `max-width` for content containers
-- Support both mobile and desktop
-- Test in ChatGPT's iframe (narrow width)
-
-### 2. Animations
-- Keep animations subtle and purposeful
-- Use CSS transitions for smooth state changes
-- Loading spinners for async operations
-
-### 3. Accessibility
-- Clear button labels
-- High contrast ratios
-- Keyboard navigation support
-
-### 4. Branding
-- Consistent color scheme
-- Logo placement (top-left recommended)
-- Typography that matches your brand
-
----
-
-## 🔧 Customization Guide
-
-### Adding a New Tool
-
-1. Define the tool in `server.setRequestHandler(ListToolsRequestSchema)`:
-
-```javascript
-{
-  name: 'my-new-tool',
-  description: 'What this tool does',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      query: { type: 'string', description: 'User input' }
-    },
-    required: ['query']
-  }
-}
-```
-
-2. Handle the tool call:
-
-```javascript
-server.setRequestHandler(CallToolRequestSchema, async (request) => {
-  if (request.params.name === 'my-new-tool') {
-    return {
-      content: [
-        {
-          type: 'widget',
-          widget: 'my-widget',
-          data: { /* widget data */ }
-        }
-      ]
-    };
-  }
-});
-```
-
-3. Create the widget HTML in `widgets/my-widget.html`
-
----
-
-## 🐛 Common Issues & Solutions
-
-### Issue: "Session terminated" error
-
-**Cause**: SSE connection cleanup error  
-**Fix**: Ensure proper error handling in SSE setup:
-
-```javascript
-transport.onclose = async () => {
-  sseConnections.delete(sessionId); // Not server.close()
-};
-```
-
-### Issue: Widget shows before session ID is created
-
-**Cause**: Parallel tool calls  
-**Fix**: Add client-side polling in widget:
-
-```javascript
-async function waitForSession() {
-  const output = await window.openai.toolOutput();
-  if (!output.sessionId) {
-    setTimeout(waitForSession, 100);
-  } else {
-    initializeWidget(output.sessionId);
-  }
-}
-```
-
-### Issue: Dark mode text not visible
-
-**Cause**: CSS specificity issues  
-**Fix**: Use theme detection and explicit classes:
-
-```javascript
-const theme = await window.openai.theme();
-document.documentElement.setAttribute('data-theme', theme);
-```
-
----
-
-## 📖 Additional Resources
-
-- [MCP Documentation](https://modelcontextprotocol.io/)
-- [OpenAI MCP Integration Guide](https://platform.openai.com/docs/guides/mcp)
-- [Heroku Node.js Deployment](https://devcenter.heroku.com/articles/deploying-nodejs)
-
----
+Server logic is in `server.js`:
+- **Tools**: Add new tool definitions in each `createMcpXServer` function
+- **Sessions**: Customize state management in `authSessions`, `cartStorage`, etc.
+- **APIs**: Integrate your own backend services
 
 ## 🤝 Contributing
 
-Contributions are welcome! Here's how:
+This repository is designed to be:
+- **Educational**: Learn by example
+- **Modular**: Copy what you need
+- **Production-ready**: Use as-is or customize
 
-1. Fork this repository
-2. Create a feature branch: `git checkout -b feature/my-feature`
-3. Commit your changes: `git commit -m "Add my feature"`
-4. Push to your fork: `git push origin feature/my-feature`
-5. Open a Pull Request
-
----
+Feel free to fork, modify, and build upon these examples!
 
 ## 📝 License
 
-MIT License - feel free to use this code for your own projects!
+MIT License - feel free to use this code in your own projects!
+
+## 🆘 Support
+
+- **Issues**: Open a GitHub issue
+- **Questions**: Check the [documentation](docs/)
+- **Examples**: See detailed guides in [docs/examples/](docs/examples/)
+
+## 🌟 What's Next?
+
+After exploring these examples, try:
+1. Building your own MCP server from scratch
+2. Combining multiple tools in creative ways
+3. Integrating with your own APIs and services
+4. Deploying to production
+
+Check out **[BUILDING_MCP_SERVERS.md](docs/BUILDING_MCP_SERVERS.md)** to get started!
 
 ---
 
-## 🙏 Acknowledgments
-
-Built with:
-- [@modelcontextprotocol/sdk](https://www.npmjs.com/package/@modelcontextprotocol/sdk)
-- [Express.js](https://expressjs.com/)
-- [Unwrangle API](https://unwrangle.com/) for product data
-
----
-
-## 💬 Questions?
-
-Open an issue or reach out! We'd love to see what you build with MCP servers.
-
-**Happy Building! 🚀**
+Built with ❤️ using the [Model Context Protocol](https://modelcontextprotocol.io/)

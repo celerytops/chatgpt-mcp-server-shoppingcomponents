@@ -1,466 +1,261 @@
-# Contributing to ChatGPT MCP Servers
+# Contributing to ChatGPT MCP Examples
 
-Thank you for your interest in contributing! This document provides guidelines for contributing to this project.
+Thank you for your interest in contributing to this project! This repository is designed to help developers learn how to build MCP servers for ChatGPT through practical examples.
 
----
+## Ways to Contribute
 
-## How to Contribute
+### 1. Report Issues
 
-### Reporting Bugs
+Found a bug or have a suggestion?
+- Check existing issues first
+- Open a new issue with a clear description
+- Include steps to reproduce (if bug)
+- Include your environment details
 
-If you find a bug, please open an issue with:
+### 2. Improve Documentation
 
-1. **Clear Title**: Describe the issue concisely
-2. **Description**: What happened vs. what you expected
-3. **Steps to Reproduce**: Detailed steps to reproduce the issue
-4. **Environment**: OS, Node.js version, browser
-5. **Screenshots/Logs**: If applicable
+- Fix typos or unclear explanations
+- Add more examples or use cases
+- Improve code comments
+- Translate documentation
 
-**Example:**
+### 3. Add New Examples
 
-```
-Title: Widget not displaying in dark mode
+We welcome new MCP server examples! Ideal examples should:
+- Demonstrate a unique pattern or use case
+- Include comprehensive documentation
+- Follow the existing structure
+- Be production-ready (or clearly marked as demo)
 
-Description: When ChatGPT is in dark mode, the authentication widget shows a blank screen.
+**Example categories we'd love to see:**
+- File upload/download
+- Real-time data (WebSockets)
+- Database integration
+- OAuth authentication
+- Third-party API integrations
+- Analytics dashboards
+- Form builders
+- Image processing
+- PDF generation
 
-Steps to Reproduce:
-1. Enable dark mode in ChatGPT
-2. Connect to MCP1 authentication server
-3. Ask "Sign me into Target"
-4. Widget appears blank
+### 4. Enhance Existing Examples
 
-Environment:
-- macOS 14.0
-- Node.js 20.10.0
-- Chrome 120.0
+- Add features to existing servers
+- Improve UI/UX
+- Optimize performance
+- Add tests
+- Fix security issues
 
-Screenshot: [attach screenshot]
-```
+## Development Setup
 
----
+1. **Fork the repository**
 
-### Suggesting Features
-
-We welcome feature suggestions! Please open an issue with:
-
-1. **Use Case**: What problem does this solve?
-2. **Proposed Solution**: How would it work?
-3. **Alternatives**: Other approaches you've considered
-4. **Impact**: Who would benefit from this feature?
-
----
-
-### Pull Requests
-
-#### Before You Start
-
-1. **Check Existing Issues**: Make sure your change isn't already being worked on
-2. **Open an Issue First**: For major changes, discuss the approach first
-3. **Fork the Repository**: Create your own fork to work on
-4. **One Change Per PR**: Keep pull requests focused on a single feature/fix
-
-#### Development Workflow
-
-1. **Fork and Clone**
-
+2. **Clone your fork**
 ```bash
-git clone https://github.com/YOUR_USERNAME/chatgpt-mcp-servers.git
-cd chatgpt-mcp-servers
+git clone https://github.com/YOUR_USERNAME/chatgpt-mcp-examples.git
+cd chatgpt-mcp-examples
 ```
 
-2. **Create a Branch**
+3. **Install dependencies**
+```bash
+npm install
+```
 
+4. **Create a branch**
 ```bash
 git checkout -b feature/your-feature-name
-# or
-git checkout -b fix/your-bug-fix
 ```
 
-Use descriptive branch names:
-- `feature/add-payment-widget`
-- `fix/dark-mode-text-color`
-- `docs/update-setup-guide`
+5. **Make your changes**
+   - Follow the existing code style
+   - Test your changes locally
+   - Update documentation
 
-3. **Make Your Changes**
+6. **Test in ChatGPT**
+   - Start server: `npm start`
+   - Add connector in ChatGPT: `http://localhost:8000/mcp`
+   - Test all affected tools
 
-- Follow the existing code style
-- Add comments for complex logic
-- Test your changes locally
-- Update documentation if needed
-
-4. **Test Thoroughly**
-
+7. **Commit your changes**
 ```bash
-# Start the server
-npm start
-
-# Test in ChatGPT
-# - Connect to http://localhost:8000/mcp
-# - Test your changes in light/dark mode
-# - Verify all 4 MCP servers still work
+git add .
+git commit -m "Add: Description of your changes"
 ```
 
-5. **Commit Your Changes**
-
-Use clear, descriptive commit messages:
-
-```bash
-git add -A
-git commit -m "Add payment widget for checkout flow
-
-- Created new payment-method.html widget
-- Added select-payment tool to MCP3
-- Supports saved cards and new card entry
-- Tested in light/dark mode"
-```
-
-**Commit Message Format:**
-- First line: Brief summary (50 chars or less)
-- Blank line
-- Detailed description with bullet points
-- Reference issues: "Fixes #123" or "Related to #456"
-
-6. **Push and Create PR**
-
+8. **Push to your fork**
 ```bash
 git push origin feature/your-feature-name
 ```
 
-Then go to GitHub and create a pull request.
+9. **Open a Pull Request**
+   - Describe what you changed and why
+   - Link any related issues
+   - Include screenshots (if UI changes)
 
-#### Pull Request Template
-
-```markdown
-## Description
-Brief description of what this PR does.
-
-## Type of Change
-- [ ] Bug fix (non-breaking change that fixes an issue)
-- [ ] New feature (non-breaking change that adds functionality)
-- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
-- [ ] Documentation update
-
-## Testing
-- [ ] Tested locally with `npm start`
-- [ ] Tested in ChatGPT (light mode)
-- [ ] Tested in ChatGPT (dark mode)
-- [ ] All 4 MCP servers still work
-- [ ] No console errors
-
-## Screenshots (if applicable)
-[Add screenshots here]
-
-## Checklist
-- [ ] My code follows the project's style guidelines
-- [ ] I have commented my code where necessary
-- [ ] I have updated the documentation
-- [ ] My changes generate no new warnings
-- [ ] I have tested my changes thoroughly
-
-## Related Issues
-Fixes #[issue number]
-```
-
----
-
-## Code Style Guidelines
+## Code Style
 
 ### JavaScript
 
-- Use **ES6+** syntax (const, let, arrow functions, async/await)
-- Use **2 spaces** for indentation
-- Use **single quotes** for strings (except in HTML)
-- Add **semicolons** at the end of statements
-- Use **camelCase** for variables and functions
-- Use **PascalCase** for classes
+- Use ES6+ features (import/export, async/await, arrow functions)
+- Use meaningful variable names
+- Add comments for complex logic
+- Keep functions small and focused
 
 **Example:**
-
 ```javascript
-// ✅ Good
-async function handleAuthentication(sessionId) {
-  const session = authSessions.get(sessionId);
-  
-  if (!session) {
-    throw new Error('Session not found');
-  }
-  
-  return {
-    authenticated: session.authenticated,
-    email: session.email,
-    name: session.name
-  };
+// Good
+async function fetchProducts(query, page = 1) {
+  const response = await fetch(`/api/products?q=${query}&page=${page}`);
+  return await response.json();
 }
 
-// ❌ Bad
-async function handle_authentication(session_id) {
-    var session = authSessions.get(session_id)
-    if(!session){
-      throw new Error("Session not found")
-    }
-    return {authenticated:session.authenticated,email:session.email,name:session.name}
+// Avoid
+async function f(q, p) {
+  return await (await fetch(`/api/products?q=${q}&page=${p}`)).json();
 }
 ```
 
 ### HTML/CSS
 
-- Use **2 spaces** for indentation
-- Use **double quotes** for HTML attributes
-- Use **kebab-case** for CSS classes
-- Group related styles together
-- Add comments for complex layouts
+- Use semantic HTML5 tags
+- Keep inline styles minimal
+- Support dark/light mode
+- Make widgets responsive
+- Use CSS variables for themes
 
 **Example:**
-
-```html
-<!-- ✅ Good -->
-<div class="auth-container" data-theme="light">
-  <h1 class="auth-title">Welcome Back</h1>
-  <button class="btn-primary" id="sign-in-btn">
-    Sign In
-  </button>
-</div>
-```
-
 ```css
-/* ✅ Good */
-.auth-container {
-  max-width: 400px;
-  margin: 0 auto;
-  padding: 24px;
+:root {
+  --primary-color: #cc0000;
+  --text-color-light: #333;
+  --text-color-dark: #e0e0e0;
 }
 
-.auth-title {
-  font-size: 24px;
-  font-weight: 600;
-  margin-bottom: 16px;
-}
-
-/* Primary button styling */
-.btn-primary {
-  background: var(--primary-color);
-  color: white;
-  padding: 12px 24px;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-}
+body.light { color: var(--text-color-light); }
+body.dark { color: var(--text-color-dark); }
 ```
 
-### Widget Best Practices
+### Documentation
 
-1. **Always Support Dark Mode**
-
-```javascript
-async function applyTheme() {
-  const theme = await window.openai.theme();
-  document.documentElement.setAttribute('data-theme', theme);
-}
-
-window.openai.addEventListener('themeChanged', applyTheme);
-```
-
-2. **Show Loading States**
-
-```javascript
-async function initialize() {
-  showLoadingScreen();
-  
-  const toolOutput = await window.openai.toolOutput();
-  
-  if (!toolOutput || !toolOutput.sessionId) {
-    setTimeout(initialize, 100);
-    return;
-  }
-  
-  hideLoadingScreen();
-  renderContent(toolOutput);
-}
-```
-
-3. **Handle Errors Gracefully**
-
-```javascript
-try {
-  const response = await fetch('/api/endpoint', { method: 'POST' });
-  if (!response.ok) throw new Error('Request failed');
-  const data = await response.json();
-  handleSuccess(data);
-} catch (error) {
-  console.error('Error:', error);
-  showErrorScreen('Something went wrong. Please try again.');
-}
-```
-
-4. **Notify ChatGPT of State Changes**
-
-```javascript
-// After important actions
-await window.openai.setWidgetState({ step: 'completed' });
-await window.openai.sendFollowUpMessage('User completed authentication');
-```
-
----
-
-## Documentation Guidelines
-
-### When to Update Documentation
-
-- **Always** update docs when adding new features
-- **Always** update docs when changing APIs
-- Update examples when changing behavior
-- Add troubleshooting entries for common issues
-
-### Documentation Files
-
-- **README.md**: High-level overview, getting started
-- **SETUP.md**: Detailed setup and deployment instructions
-- **EXAMPLES.md**: Code examples and patterns
-- **CONTRIBUTING.md**: This file (contribution guidelines)
-
-### Documentation Style
-
-- Use **clear, concise language**
-- Include **code examples** for clarity
-- Add **screenshots** for UI changes
-- Use **headings** to organize content
-- Add **links** to related sections
-- Use **emoji sparingly** (✅ ❌ 🚀)
-
----
+- Use clear, concise language
+- Include code examples
+- Add screenshots for UI features
+- Document all API endpoints
+- Explain the "why" not just the "what"
 
 ## Project Structure
 
-When adding new features, follow this structure:
+When adding a new MCP server:
 
 ```
-chatgpt-mcp-servers/
-├── server.js              # Main server file
-│   ├── MCP1: Authentication
-│   ├── MCP2: Product Search
-│   ├── MCP3: Checkout
-│   ├── MCP4: Membership
-│   └── Shared utilities
-│
-├── widgets/              # UI components
-│   └── [feature-name].html
-│
-├── public/              # Static assets
-│   └── [asset-name]
-│
-├── tests/              # Test files (optional)
-│   └── [feature].test.js
-│
-└── docs/               # Additional documentation
-    └── [topic].md
+ChatGPT Components/
+├── server.js                    # Add your server here
+├── widgets/
+│   └── your-widget.html         # Add widget HTML here
+├── docs/
+│   └── examples/
+│       └── your-example.md      # Add documentation here
+└── README.md                    # Update with your server URL
 ```
 
----
+## Testing Checklist
 
-## Testing Guidelines
+Before submitting a PR:
 
-### Manual Testing Checklist
-
-Before submitting a PR, test:
-
-- [ ] Server starts without errors (`npm start`)
-- [ ] All MCP endpoints work (`/mcp`, `/mcp2`, `/mcp3`, `/mcp4`)
-- [ ] Widgets render correctly in ChatGPT
-- [ ] Dark mode works (toggle in ChatGPT settings)
+- [ ] Code runs without errors
+- [ ] All tools work in ChatGPT
+- [ ] Widgets render correctly
+- [ ] Dark mode works
 - [ ] Light mode works
-- [ ] No console errors in browser DevTools
-- [ ] No errors in server logs
-- [ ] Session management works correctly
-- [ ] Demo reset endpoint works (`POST /api/demo/reset`)
+- [ ] No console errors
+- [ ] Documentation is complete
+- [ ] README.md updated (if needed)
 
-### Testing in ChatGPT
+## Commit Message Guidelines
 
-1. **Connect Locally**: Use `http://localhost:8000/mcp`
-2. **Test Each MCP Server**: Try all 4 endpoints
-3. **Test Edge Cases**: Invalid inputs, missing data, etc.
-4. **Test Across Themes**: Light and dark mode
-5. **Test Sequential Flows**: Multi-step processes like authentication
+Use clear, descriptive commit messages:
 
----
+- **Add:** New features or files
+- **Fix:** Bug fixes
+- **Update:** Changes to existing features
+- **Docs:** Documentation changes
+- **Refactor:** Code restructuring
+- **Style:** Formatting changes
+- **Test:** Adding or updating tests
 
-## Review Process
+**Examples:**
+```
+Add: Circle 360 membership signup widget
+Fix: Confetti animation starting from wrong position
+Update: Product carousel dark mode colors
+Docs: Add architecture diagram
+```
 
-### What We Look For
+## Pull Request Guidelines
 
-✅ **Code Quality**
-- Clean, readable code
-- Proper error handling
-- Efficient algorithms
-- No unnecessary complexity
+### Title
 
-✅ **Functionality**
-- Feature works as described
-- No breaking changes (unless discussed)
-- Edge cases handled
+Use a clear, descriptive title:
+- "Add authentication MCP server example"
+- "Fix dark mode text color in checkout widget"
+- "Update README with deployment instructions"
 
-✅ **Documentation**
-- Code comments for complex logic
-- Updated README/SETUP/EXAMPLES as needed
-- Clear commit messages
+### Description
 
-✅ **Testing**
-- Manually tested locally
-- Tested in ChatGPT
-- No regressions in existing features
+Include:
+1. **What** changed
+2. **Why** it changed
+3. **How** to test it
+4. Screenshots (if applicable)
+5. Related issues
 
-### Timeline
+**Template:**
+```markdown
+## Description
+Added a new MCP server for file uploads with drag-and-drop UI.
 
-- **Initial Review**: Within 3-5 days
-- **Feedback**: We'll provide constructive feedback
-- **Iterations**: Make requested changes
-- **Merge**: Once approved, we'll merge your PR!
+## Why
+Many developers need file upload capabilities in their MCP servers.
 
----
+## How to Test
+1. Start server: `npm start`
+2. Connect to `/mcp5`
+3. Ask: "Upload a file"
+4. Drag and drop a file into the widget
 
-## Community Guidelines
+## Screenshots
+[Screenshot of widget]
 
-### Be Respectful
+Fixes #123
+```
 
-- Be kind and constructive in discussions
-- Welcome newcomers and help them get started
-- Give credit where credit is due
-- Assume good intentions
+## Code Review Process
 
-### Be Collaborative
+1. Maintainer reviews your PR
+2. Feedback provided (if needed)
+3. You make requested changes
+4. Maintainer approves and merges
 
-- Share your ideas openly
-- Ask questions if something is unclear
-- Offer help to other contributors
-- Celebrate successes together!
+Typical review time: 2-5 days
 
-### Be Patient
+## Questions?
 
-- Maintainers are volunteers with limited time
-- Reviews may take a few days
-- Not all PRs can be merged
-- We appreciate your understanding!
+- **GitHub Issues**: For bugs and feature requests
+- **Discussions**: For general questions
+- **Documentation**: Check [docs/](docs/) first
 
----
+## License
+
+By contributing, you agree that your contributions will be licensed under the MIT License.
 
 ## Recognition
 
 Contributors will be:
-- Listed in the project's contributors section
+- Listed in the project's contributors
 - Credited in release notes
-- Mentioned in relevant documentation
-
-Thank you for making this project better! 🎉
+- Appreciated forever! 🙏
 
 ---
 
-## Questions?
-
-If you have questions about contributing:
-
-1. Check the [README.md](./README.md)
-2. Check the [SETUP.md](./SETUP.md)
-3. Check existing issues
-4. Open a new issue with the "question" label
-
-We're here to help! 😊
+Thank you for contributing! Every contribution, no matter how small, makes this project better for everyone.
 
