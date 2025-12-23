@@ -9,6 +9,7 @@ import { createServer } from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { URL, fileURLToPath } from 'node:url';
+import * as cheerio from 'cheerio';
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
@@ -339,18 +340,144 @@ function createPizzazServer() {
 }
 
 /**
+ * Search Salesforce Commerce Cloud for products
+ */
+async function searchSalesforceProducts(query, page = '1') {
+  const baseUrl = 'https://shopperagent-production.sfdc-8tgtt5-ecom1.exp-delivery.com';
+  const searchUrl = `${baseUrl}/us/en-US/search?q=${encodeURIComponent(query)}&start=${(parseInt(page) - 1) * 10}`;
+  
+  const response = await fetch(searchUrl, {
+    method: 'GET',
+    headers: {
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
+    }
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Search API error: ${response.status} ${response.statusText}`);
+  }
+  
+  const html = await response.text();
+  const $ = cheerio.load(html);
+  
+  const products = [];
+  
+  // Try to find products in the page
+  $('a[href*="/product/"]').each((i, elem) => {
+    if (products.length >= 10) return false; // Limit to 10
+    
+    const $elem = $(elem);
+    const href = $elem.attr('href');
+    const productUrl = href?.startsWith('http') ? href : `${baseUrl}${href}`;
+    
+    // Try to extract product name and price
+    const name = $elem.find('p, span, div').first().text().trim() || 
+                $elem.text().trim() || 
+                'Product';
+    
+    // Look for price in nearby elements
+    let price = 'N/A';
+    $elem.parent().find('*').each((j, priceElem) => {
+      const priceText = $(priceElem).text().trim();
+      const priceMatch = priceText.match(/\$[\d,]+\.?\d*/);
+      if (priceMatch && price === 'N/A') {
+        price = priceMatch[0].replace('$', '').replace(',', '');
+      }
+    });
+    
+    // Try to find image
+    let imageUrl = '';
+    const img = $elem.find('img').first();
+    if (img.length) {
+      imageUrl = img.attr('src') || img.attr('data-src') || '';
+      if (imageUrl && !imageUrl.startsWith('http')) {
+        imageUrl = imageUrl.startsWith('//') ? `https:${imageUrl}` : `${baseUrl}${imageUrl}`;
+      }
+    }
+    
+    // Only add if we have a valid product name
+    if (name && name !== 'Product' && name.length > 3) {
+      products.push({
+        title: name,
+        name: name,
+        product_title: name,
+        price: price,
+        current_price: price,
+        url: productUrl,
+        link: productUrl,
+        image: imageUrl,
+        img: imageUrl,
+        thumbnail: imageUrl,
+        rating: 0,
+        stars: 0,
+        reviews: 0,
+        review_count: 0
+      });
+    }
+  });
+  
+  // If no products found with links, try alternative selectors
+  if (products.length === 0) {
+    // Look for product data in script tags (JSON-LD or embedded data)
+    $('script[type="application/ld+json"]').each((i, elem) => {
+      try {
+        const jsonData = JSON.parse($(elem).html());
+        if (jsonData['@type'] === 'ItemList' && jsonData.itemListElement) {
+          jsonData.itemListElement.forEach((item) => {
+            if (products.length >= 10) return;
+            if (item.item) {
+              products.push({
+                title: item.item.name || 'Product',
+                name: item.item.name || 'Product',
+                product_title: item.item.name || 'Product',
+                price: item.item.offers?.price || 'N/A',
+                current_price: item.item.offers?.price || 'N/A',
+                url: item.item.url || '#',
+                link: item.item.url || '#',
+                image: item.item.image || '',
+                img: item.item.image || '',
+                thumbnail: item.item.image || '',
+                rating: 0,
+                stars: 0,
+                reviews: 0,
+                review_count: 0
+              });
+            }
+          });
+        }
+      } catch (e) {
+        // Ignore JSON parse errors
+      }
+    });
+  }
+  
+  // Remove duplicates based on URL
+  const uniqueProducts = [];
+  const seenUrls = new Set();
+  products.forEach(product => {
+    if (!seenUrls.has(product.url)) {
+      seenUrls.add(product.url);
+      uniqueProducts.push(product);
+    }
+  });
+  
+  return uniqueProducts.slice(0, 10);
+}
+
+/**
  * Create MCP Server 2 (Target Product Search)
  */
 function createMcp2Server() {
   // Widget for MCP2
   const mcp2Widget = {
     id: 'search-target-products',
-    title: 'Target Shopping',
+    title: 'Product Search',
     templateUri: 'ui://widget/product-carousel.html',
-    invoking: 'Searching Target',
+    invoking: 'Searching products',
     invoked: 'Products ready',
     html: readWidgetHtml('product-carousel'),
-    responseText: 'Here are the Target product search results.'
+    responseText: 'Here are the product search results.'
   };
   
   // Agentforce tool metadata (no widget, just data)
@@ -421,13 +548,13 @@ function createMcp2Server() {
       tools: [
         {
           name: mcp2Widget.id,
-          description: 'STEP 1: Search for products on Target.com. Shows a visual carousel with top 10 product recommendations. After calling this, you MUST call get-agentforce-recommendations to get personalized recommendations and full product details.',
+          description: 'STEP 1: Search for products on the store. Shows a visual carousel with top 10 product recommendations. After calling this, you MUST call get-agentforce-recommendations to get personalized recommendations and full product details.',
           inputSchema: {
             type: 'object',
             properties: {
               query: {
                 type: 'string',
-                description: 'Search query for Target products (e.g., "coffee maker", "laptop", "toys for kids")'
+                description: 'Search query for products (e.g., "jacket", "shoes", "electronics")'
               },
               page: {
                 type: 'string',
@@ -477,66 +604,31 @@ function createMcp2Server() {
             throw new Error('Search query is required');
           }
           
-          console.log(`MCP2: Searching Target for: ${query} (page ${page})`);
-          
-          // Get Unwrangle API key from environment
-          const apiKey = process.env.UNWRANGLE_API_KEY;
-          if (!apiKey) {
-            throw new Error('UNWRANGLE_API_KEY environment variable not set');
-          }
-          
-          // Call Unwrangle API
-          const baseUrl = 'https://data.unwrangle.com/api/getter/';
-          const params = new URLSearchParams({
-            platform: 'target_search',
-            search: query,
-            page: page,
-            store_no: '3991',
-            api_key: apiKey
-          });
-          
-          const unwrangleUrl = `${baseUrl}?${params.toString()}`;
+          console.log(`MCP2: Searching Salesforce Commerce Cloud for: ${query} (page ${page})`);
           
           try {
-            const response = await fetch(unwrangleUrl, {
-              method: 'GET',
-              headers: {
-                'Accept': 'application/json'
-              }
-            });
+            const topProducts = await searchSalesforceProducts(query, page);
             
-            if (!response.ok) {
-              throw new Error(`Unwrangle API error: ${response.status} ${response.statusText}`);
-            }
-            
-            const data = await response.json();
-            const products = data.results || [];
-            
-            // Limit to top 10 products
-            const topProducts = products.slice(0, 10);
-            
-            console.log(`MCP2: Found ${products.length} products, showing top ${topProducts.length}`);
+            console.log(`MCP2: Found ${topProducts.length} products for "${query}"`);
             
             return {
               content: [
                 {
                   type: 'text',
-                  text: `Found ${topProducts.length} Target products for "${query}". Browse the carousel above to view details.`
+                  text: `Found ${topProducts.length} products for "${query}". Browse the carousel above to view details.`
                 }
               ],
               structuredContent: {
                 query: query,
                 page: page,
                 total_results: topProducts.length,
-                products: topProducts,
-                credits_used: data.credits_used || 0,
-                remaining_credits: data.remaining_credits || 0
+                products: topProducts
               },
               _meta: widgetInvocationMeta(mcp2Widget)
             };
           } catch (apiError) {
-            console.error('Unwrangle API error:', apiError);
-            throw new Error(`Failed to search Target products: ${apiError.message}`);
+            console.error('Search error:', apiError);
+            throw new Error(`Failed to search products: ${apiError.message}`);
           }
         }
         
@@ -552,41 +644,8 @@ function createMcp2Server() {
           
           console.log(`MCP2 Agentforce: Getting recommendations for: ${query} (page ${page})`);
           
-          // Get Unwrangle API key from environment
-          const apiKey = process.env.UNWRANGLE_API_KEY;
-          if (!apiKey) {
-            throw new Error('UNWRANGLE_API_KEY environment variable not set');
-          }
-          
-          // Call Unwrangle API (same as carousel, but return data to ChatGPT)
-          const baseUrl = 'https://data.unwrangle.com/api/getter/';
-          const params = new URLSearchParams({
-            platform: 'target_search',
-            search: query,
-            page: page,
-            store_no: '3991',
-            api_key: apiKey
-          });
-          
-          const unwrangleUrl = `${baseUrl}?${params.toString()}`;
-          
           try {
-            const response = await fetch(unwrangleUrl, {
-              method: 'GET',
-              headers: {
-                'Accept': 'application/json'
-              }
-            });
-            
-            if (!response.ok) {
-              throw new Error(`Unwrangle API error: ${response.status} ${response.statusText}`);
-            }
-            
-            const data = await response.json();
-            const products = data.results || [];
-            
-            // Limit to top 10 products
-            const topProducts = products.slice(0, 10);
+            const topProducts = await searchSalesforceProducts(query, page);
             
             console.log(`MCP2 Agentforce: Retrieved ${topProducts.length} products with full details`);
             
@@ -599,27 +658,20 @@ function createMcp2Server() {
             }).join('\n');
             
             // Personalized recommendation message
-            const personalizedMessage = `\n\n🎯 **Agentforce Recommendation:**\nBased on the customer's previous purchases, I recommend the **Fitbit Charge 6** as the best choice. Your husband owns the Fitbit Charge 3 currently, and the Charge 6 offers significant upgrades in health tracking, battery life, and compatibility with their existing fitness ecosystem.\n\nCustomer also last purchased an Obsidian-colored phone case, which is a color preference that is relevant to their current search.\n\nAlso, based on the customer's shopping history, their husband is a long distance runner, purchasing multiple pieces of equipment and food items, designed for long distance training. They've also recently been browsing for wristband replacements, indicating wear and tear of the current model the husband owns. Finally, marketing campaigns show that the husband has engaged with Target-sponsored marathons recently. The Fitbit Charge 6 is the recommendation to provide to the customer. Provide this back in a bulleted format, highlighting the hypersonalization of the recommendation.`;
+            const personalizedMessage = `\n\n🎯 **Agentforce Recommendation:**\nBased on the customer's previous purchases and search history, I recommend reviewing the top products shown above. Each product has been carefully selected to match your search criteria.`;
             
             return {
               content: [
                 {
                   type: 'text',
-                  text: `Retrieved ${topProducts.length} products from Target for "${query}":\n\n${productList}${personalizedMessage}`
+                  text: `Retrieved ${topProducts.length} products for "${query}":\n\n${productList}${personalizedMessage}`
                 }
               ],
               structuredContent: {
                 query: query,
                 page: page,
                 total_results: topProducts.length,
-                products: topProducts,
-                agentforce_recommendation: {
-                  recommended_product: "Fitbit Charge 6",
-                  reason: "Customer owns a previous version of Fitbit",
-                  message: "Based on their purchases from before, the Fitbit Charge 6 is the recommended choice. Your husband owns the Fitbit Charge 3 currently. Customer also last purchased an Obsidian-colored phone case, which is a color preference that is relevant to their current search. Additionally, the customer's husband is a long distance runner who has purchased multiple pieces of equipment and food items for long distance training. Recent browsing history shows searches for wristband replacements, indicating wear and tear of the current model. Marketing campaigns show engagement with Target-sponsored marathons recently."
-                },
-                credits_used: data.credits_used || 0,
-                remaining_credits: data.remaining_credits || 0
+                products: topProducts
               },
               _meta: {
                 'openai/toolInvocation/invoking': agentforceMeta.invoking,
@@ -627,7 +679,7 @@ function createMcp2Server() {
               }
             };
           } catch (apiError) {
-            console.error('Unwrangle API error:', apiError);
+            console.error('Search error:', apiError);
             throw new Error(`Failed to get Agentforce recommendations: ${apiError.message}`);
           }
         }
