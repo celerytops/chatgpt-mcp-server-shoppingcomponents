@@ -22,19 +22,34 @@
       color: #e0e0e0;
     }
     
-    .store-logo {
+    .target-logo {
       width: 48px;
       height: 48px;
-      background: linear-gradient(135deg, #0066cc 0%, #0088ff 100%);
-      border-radius: 8px;
+      background: linear-gradient(135deg, #cc0000 0%, #ff0000 100%);
+      border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 2px 8px rgba(0, 102, 204, 0.3);
+      box-shadow: 0 2px 8px rgba(204, 0, 0, 0.3);
       position: relative;
-      font-weight: bold;
-      color: white;
-      font-size: 20px;
+    }
+
+    .target-logo::before {
+      content: '';
+      position: absolute;
+      width: 33px;
+      height: 33px;
+      border-radius: 50%;
+      background: white;
+    }
+
+    .target-logo::after {
+      content: '';
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #cc0000;
     }
     
     .header {
@@ -50,7 +65,7 @@
     
     .header h1 {
       font-size: 24px;
-      color: #0066cc;
+      color: #cc0000;
       margin-bottom: 4px;
     }
     
@@ -88,7 +103,7 @@
     }
     
     .carousel::-webkit-scrollbar-thumb {
-      background: #0066cc;
+      background: #cc0000;
       border-radius: 3px;
     }
     
@@ -136,7 +151,6 @@
       margin-bottom: 8px;
       display: -webkit-box;
       -webkit-line-clamp: 2;
-      line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
       min-height: 40px;
@@ -149,7 +163,7 @@
     .product-price {
       font-size: 20px;
       font-weight: 700;
-      color: #0066cc;
+      color: #cc0000;
       margin-bottom: 8px;
     }
     
@@ -174,7 +188,7 @@
     .product-link {
       display: block;
       text-align: center;
-      background: #0066cc;
+      background: #cc0000;
       color: white;
       padding: 8px 16px;
       border-radius: 6px;
@@ -186,7 +200,7 @@
     }
     
     .product-link:hover {
-      background: #0052a3;
+      background: #aa0000;
     }
     
     .nav-button {
@@ -251,8 +265,8 @@
       display: inline-block;
       width: 40px;
       height: 40px;
-      border: 4px solid rgba(0, 102, 204, 0.2);
-      border-top-color: #0066cc;
+      border: 4px solid rgba(204, 0, 0, 0.2);
+      border-top-color: #cc0000;
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
       margin-bottom: 16px;
@@ -350,7 +364,7 @@
     .product-detail-price {
       font-size: 32px;
       font-weight: 700;
-      color: #0066cc;
+      color: #cc0000;
       margin-bottom: 16px;
     }
     
@@ -366,7 +380,7 @@
     
     .buy-button {
       display: inline-block;
-      background: #0066cc;
+      background: #cc0000;
       color: white;
       padding: 14px 32px;
       border-radius: 8px;
@@ -377,15 +391,15 @@
     }
     
     .buy-button:hover {
-      background: #0052a3;
+      background: #aa0000;
     }
   </style>
 </head>
 <body>
   <div class="header">
-    <div class="store-logo">🛍️</div>
+    <div class="target-logo"></div>
     <div class="header-content">
-      <h1>Product Search</h1>
+      <h1>Target Shopping</h1>
       <p id="query-text">Loading results...</p>
     </div>
   </div>
@@ -423,7 +437,7 @@
           <div id="detail-rating" class="product-rating"></div>
           <div id="detail-price" class="product-detail-price"></div>
           <div id="detail-description" class="product-detail-description"></div>
-          <a id="detail-link" href="#" target="_blank" class="buy-button">View Product</a>
+          <a id="detail-link" href="#" target="_blank" class="buy-button">View on Target.com</a>
         </div>
       </div>
     </div>
