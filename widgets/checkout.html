@@ -45,12 +45,12 @@
     .target-logo {
       width: 48px;
       height: 48px;
-      background: linear-gradient(135deg, #cc0000 0%, #ff0000 100%);
+      background: linear-gradient(135deg, #0a5cab 0%, #0d6fd4 100%);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 2px 8px rgba(204, 0, 0, 0.3);
+      box-shadow: 0 2px 8px rgba(10, 92, 171, 0.3);
       position: relative;
       flex-shrink: 0;
     }
@@ -70,7 +70,7 @@
       width: 18px;
       height: 18px;
       border-radius: 50%;
-      background: #cc0000;
+      background: #0a5cab;
     }
     
     h1 {
@@ -109,7 +109,7 @@
       background: #f9f9f9;
       padding: 16px;
       border-radius: 8px;
-      border-left: 4px solid #cc0000;
+      border-left: 4px solid #0a5cab;
     }
     
     body.dark-mode .info-box {
@@ -186,7 +186,7 @@
     .cart-item-price {
       font-size: 18px;
       font-weight: 700;
-      color: #cc0000;
+      color: #0a5cab;
     }
     
     .order-summary {
@@ -221,7 +221,7 @@
     .btn-primary {
       width: 100%;
       padding: 16px;
-      background: linear-gradient(135deg, #cc0000 0%, #ff0000 100%);
+      background: linear-gradient(135deg, #0a5cab 0%, #0d6fd4 100%);
       color: white;
       border: none;
       border-radius: 8px;
@@ -233,7 +233,7 @@
     
     .btn-primary:hover {
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(204, 0, 0, 0.3);
+      box-shadow: 0 4px 12px rgba(10, 92, 171, 0.3);
     }
     
     .btn-primary:disabled {
@@ -313,23 +313,23 @@
     }
     
     .order-number {
-      background: #e3f2fd;
+      background: #e8f0f8;
       padding: 16px;
       border-radius: 8px;
       margin-top: 24px;
     }
     
     body.dark-mode .order-number {
-      background: #1a3a52;
+      background: #1a2d3f;
     }
     
     .order-number p {
       font-size: 14px;
-      color: #1976d2;
+      color: #0a5cab;
     }
     
     body.dark-mode .order-number p {
-      color: #64b5f6;
+      color: #5ba3e8;
     }
     
     .order-number strong {
@@ -345,8 +345,8 @@
       display: inline-block;
       width: 40px;
       height: 40px;
-      border: 4px solid rgba(204, 0, 0, 0.2);
-      border-top-color: #cc0000;
+      border: 4px solid rgba(10, 92, 171, 0.2);
+      border-top-color: #0a5cab;
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
       margin-bottom: 16px;
@@ -363,7 +363,7 @@
     <div class="container">
       <div class="header">
         <div class="target-logo"></div>
-        <h1>Checkout</h1>
+        <h1>Northern Trail Outfitters - Checkout</h1>
       </div>
       
       <!-- Cart Items -->
@@ -510,7 +510,7 @@
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       // Generate order number
-      const orderNumber = 'TGT-' + Math.random().toString(36).substring(2, 11).toUpperCase();
+      const orderNumber = 'NTO-' + Math.random().toString(36).substring(2, 11).toUpperCase();
       document.getElementById('order-id').textContent = orderNumber;
       
       // Show success screen
