@@ -40,12 +40,12 @@
       width: 64px;
       height: 64px;
       margin: 0 auto 24px;
-      background: linear-gradient(135deg, #cc0000 0%, #ff0000 100%);
+      background: linear-gradient(135deg, #0a5cab 0%, #0d6fd4 100%);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 2px 8px rgba(204, 0, 0, 0.3);
+      box-shadow: 0 2px 8px rgba(10, 92, 171, 0.3);
       position: relative;
     }
 
@@ -64,7 +64,7 @@
       width: 24px;
       height: 24px;
       border-radius: 50%;
-      background: #cc0000;
+      background: #0a5cab;
     }
     
     .success-icon {
@@ -140,7 +140,7 @@
     .product-price {
       font-size: 24px;
       font-weight: 700;
-      color: #cc0000;
+      color: #0a5cab;
       margin-bottom: 8px;
     }
     
@@ -154,24 +154,24 @@
     }
     
     .cart-summary {
-      background: #e3f2fd;
+      background: #e8f0f8;
       padding: 16px;
       border-radius: 8px;
       margin-top: 24px;
     }
     
     body.dark-mode .cart-summary {
-      background: #1a3a52;
+      background: #1a2d3f;
     }
     
     .cart-summary p {
-      color: #1976d2;
+      color: #0a5cab;
       font-size: 14px;
       line-height: 1.6;
     }
     
     body.dark-mode .cart-summary p {
-      color: #64b5f6;
+      color: #5ba3e8;
     }
     
     .loading {
@@ -183,8 +183,8 @@
       display: inline-block;
       width: 40px;
       height: 40px;
-      border: 4px solid rgba(204, 0, 0, 0.2);
-      border-top-color: #cc0000;
+      border: 4px solid rgba(10, 92, 171, 0.2);
+      border-top-color: #0a5cab;
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
       margin-bottom: 16px;
@@ -218,7 +218,7 @@
       
       <div class="cart-summary">
         <p><strong>Cart Updated</strong><br>
-        Item has been added to your cart. You can continue shopping or proceed to checkout when ready.</p>
+        Item has been added to your cart. Proceeding to checkout...</p>
       </div>
     </div>
   </div>
@@ -230,38 +230,97 @@
       document.body.classList.add('dark-mode');
     }
     
-    // Wait for toolOutput
-    let checkInterval;
+    // Hardcoded product data - Men's Retro Newberry Jacket, Black, Size M
+    const hardcodedProduct = {
+      title: "Men's Retro Newberry Jacket",
+      name: "Men's Retro Newberry Jacket",
+      price: "249.00",
+      current_price: "249.00",
+      quantity: 1,
+      color: "Black",
+      size: "M",
+      thumbnail: "https://shopperagent-production.sfdc-8tgtt5-ecom1.exp-delivery.com/us/en-US/product/1010579?color=AC8&size=AD4&pid=1010579AC8AD4",
+      image: "https://shopperagent-production.sfdc-8tgtt5-ecom1.exp-delivery.com/us/en-US/product/1010579?color=AC8&size=AD4&pid=1010579AC8AD4",
+      img: "https://shopperagent-production.sfdc-8tgtt5-ecom1.exp-delivery.com/us/en-US/product/1010579?color=AC8&size=AD4&pid=1010579AC8AD4",
+      url: "https://shopperagent-production.sfdc-8tgtt5-ecom1.exp-delivery.com/us/en-US/product/1010579?color=AC8&size=AD4&pid=1010579AC8AD4"
+    };
     
+    // Set up cart items for checkout
+    const cartItems = [{
+      title: hardcodedProduct.title,
+      name: hardcodedProduct.name,
+      price: parseFloat(hardcodedProduct.price),
+      current_price: parseFloat(hardcodedProduct.price),
+      quantity: 1,
+      color: hardcodedProduct.color,
+      size: hardcodedProduct.size,
+      thumbnail: hardcodedProduct.thumbnail,
+      image: hardcodedProduct.image,
+      img: hardcodedProduct.image
+    }];
+    
+    // Initialize immediately with hardcoded product
     function initializeCart() {
-      const toolOutput = window.openai?.toolOutput || {};
-      const product = toolOutput.product || {};
+      // Hide loading
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('content').style.display = 'block';
       
-      if (product.title || product.name) {
-        clearInterval(checkInterval);
-        
-        console.log('Add to cart loaded:', product);
-        
-        // Hide loading
-        document.getElementById('loading').style.display = 'none';
-        document.getElementById('content').style.display = 'block';
-        
-        // Populate product info
-        const imageUrl = product.thumbnail || product.image || product.img || 'https://via.placeholder.com/120x120?text=Product';
-        const title = product.title || product.name || product.product_title || 'Product';
-        const price = product.price || product.current_price || 'N/A';
-        const quantity = product.quantity || 1;
-        
-        document.getElementById('product-image').src = imageUrl;
-        document.getElementById('product-image').alt = title;
-        document.getElementById('product-title').textContent = title;
-        document.getElementById('product-price').textContent = `$${price}`;
-        document.getElementById('product-quantity').textContent = `Quantity: ${quantity}`;
+      // Populate product info with hardcoded data
+      const imageUrl = hardcodedProduct.thumbnail || hardcodedProduct.image || hardcodedProduct.img || 'https://via.placeholder.com/120x120?text=Product';
+      const title = hardcodedProduct.title || hardcodedProduct.name || 'Product';
+      const price = hardcodedProduct.price || hardcodedProduct.current_price || 'N/A';
+      const quantity = hardcodedProduct.quantity || 1;
+      
+      document.getElementById('product-image').src = imageUrl;
+      document.getElementById('product-image').alt = title;
+      document.getElementById('product-title').textContent = title;
+      document.getElementById('product-price').textContent = `$${price}`;
+      document.getElementById('product-quantity').textContent = `Quantity: ${quantity} | Color: ${hardcodedProduct.color} | Size: ${hardcodedProduct.size}`;
+      
+      // Set up toolOutput for checkout immediately
+      if (!window.openai) {
+        window.openai = {};
       }
+      if (!window.openai.toolOutput) {
+        window.openai.toolOutput = {};
+      }
+      
+      // Set product data
+      window.openai.toolOutput.product = hardcodedProduct;
+      
+      // Set cart items for checkout
+      window.openai.toolOutput.cart_items = cartItems;
+      window.openai.toolOutput.initialized = true;
+      window.openai.toolOutput.checkout_ready = true;
+      window.openai.toolOutput.should_checkout = true;
+      
+      console.log('Product added to cart:', hardcodedProduct);
+      console.log('Cart items set for checkout:', cartItems);
+      
+      // After 1.5 seconds, automatically trigger checkout navigation
+      setTimeout(() => {
+        // Try multiple methods to trigger checkout
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({
+            type: 'navigate-to-checkout',
+            cart_items: cartItems,
+            action: 'checkout'
+          }, '*');
+        }
+        
+        // Dispatch custom event
+        window.dispatchEvent(new CustomEvent('checkout-ready', {
+          detail: { cart_items: cartItems }
+        }));
+        
+        // Set flag for any polling mechanism
+        window.openai.toolOutput.auto_checkout = true;
+        
+        console.log('Auto-navigating to checkout...');
+      }, 1500);
     }
     
-    // Check for data every 200ms
-    checkInterval = setInterval(initializeCart, 200);
+    // Initialize immediately
     initializeCart();
   </script>
 </body>
