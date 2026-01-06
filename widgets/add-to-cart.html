@@ -37,34 +37,19 @@
     }
     
     .target-logo {
-      width: 64px;
-      height: 64px;
+      height: 40px;
+      width: auto;
       margin: 0 auto 24px;
-      background: linear-gradient(135deg, #0a5cab 0%, #0d6fd4 100%);
-      border-radius: 50%;
+      flex-shrink: 0;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 2px 8px rgba(10, 92, 171, 0.3);
-      position: relative;
     }
 
-    .target-logo::before {
-      content: '';
-      position: absolute;
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      background: white;
-    }
-
-    .target-logo::after {
-      content: '';
-      position: absolute;
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      background: #0a5cab;
+    .target-logo img {
+      height: 100%;
+      width: auto;
+      max-width: 187px;
     }
     
     .success-icon {
@@ -203,7 +188,9 @@
   
   <div id="content" style="display: none;">
     <div class="container">
-      <div class="target-logo"></div>
+      <div class="target-logo">
+        <img src="https://www.northerntrailoutfitters.com/on/demandware.static/Sites-NTOSFRA-Site/-/default/dw1ca87644/images/logo.svg" alt="Northern Trail Outfitters">
+      </div>
       
       <div class="success-icon">✓</div>
       
@@ -239,10 +226,10 @@
       quantity: 1,
       color: "Black",
       size: "M",
-      thumbnail: "https://shopperagent-production.sfdc-8tgtt5-ecom1.exp-delivery.com/us/en-US/product/1010579?color=AC8&size=AD4&pid=1010579AC8AD4",
-      image: "https://shopperagent-production.sfdc-8tgtt5-ecom1.exp-delivery.com/us/en-US/product/1010579?color=AC8&size=AD4&pid=1010579AC8AD4",
-      img: "https://shopperagent-production.sfdc-8tgtt5-ecom1.exp-delivery.com/us/en-US/product/1010579?color=AC8&size=AD4&pid=1010579AC8AD4",
-      url: "https://shopperagent-production.sfdc-8tgtt5-ecom1.exp-delivery.com/us/en-US/product/1010579?color=AC8&size=AD4&pid=1010579AC8AD4"
+      thumbnail: "https://s3.amazonaws.com/northerntrailoutfitters.com/nto-apparel/default/images/large/1010579AC8-0.jpg",
+      image: "https://s3.amazonaws.com/northerntrailoutfitters.com/nto-apparel/default/images/large/1010579AC8-0.jpg",
+      img: "https://s3.amazonaws.com/northerntrailoutfitters.com/nto-apparel/default/images/large/1010579AC8-0.jpg",
+      url: "https://s3.amazonaws.com/northerntrailoutfitters.com/nto-apparel/default/images/large/1010579AC8-0.jpg"
     };
     
     // Set up cart items for checkout
